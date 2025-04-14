@@ -8,3 +8,5 @@ target/
 .venv
 env/
 .vscode
+dbdata
+dump
