@@ -1,0 +1,31 @@
+<div class="auth-container">
+    <img src="/assets/logo.png" alt="Logo" class="logo" />
+    <h2><i nz-icon nzType="user"></i> Регистрация</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <nz-form-item>
+        <nz-form-control>
+          <input nz-input formControlName="firstName" placeholder="Введите имя" />
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-control>
+          <input nz-input formControlName="lastName" placeholder="Введите фамилию" />
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-control>
+          <input nz-input formControlName="email" placeholder="Введите адрес электронной почты" />
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-control>
+          <input nz-input type="password" formControlName="password" placeholder="Введите пароль" />
+        </nz-form-control>
+      </nz-form-item>
+      <button nz-button nzType="primary" class="full-btn">Зарегистрироваться</button>
+    </form>
+    <div class="auth-footer">
+      <a routerLink="/login">Уже есть аккаунт? Войти</a>
+    </div>
+  </div>
+  

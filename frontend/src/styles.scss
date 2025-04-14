@@ -1,1 +1,28 @@
-/* You can add global styles to this file, and also import other style files */
+.auth-container {
+    padding: 20px;
+    text-align: center;
+    max-width: 400px;
+    margin: auto;
+    .logo {
+      height: 60px;
+      margin-bottom: 20px;
+    }
+    .full-btn {
+      width: 100%;
+      margin-top: 16px;
+    }
+    .auth-footer {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+  }
+  .mt {
+    margin-top: 16px;
+  }
+  .btns {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+  }
