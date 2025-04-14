@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,6 +34,7 @@ SECRET_KEY = os.getenv(
 DEBUG = True
 
 ALLOWED_HOSTS = []
+AUTH_USER_MODEL = "users.CustomUser"
 
 
 # Application definition
@@ -46,6 +48,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "drf_spectacular",
+    "users",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
 ]
@@ -94,6 +98,25 @@ TEMPLATES = [
         },
     },
 ]
+
+REST_FRAMEWORK = {
+    # YOUR SETTINGS
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Your Project API",
+    "DESCRIPTION": "Your project description",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # OTHER SETTINGS
+}
+
 
 WSGI_APPLICATION = "backend.wsgi.application"
 

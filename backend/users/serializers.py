@@ -20,8 +20,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(write_only=True)
     password = serializers.CharField(write_only=True)
+    access = serializers.CharField(read_only=True)
+    refresh = serializers.CharField(read_only=True)
 
     def validate(self, data):
         user = authenticate(**data)

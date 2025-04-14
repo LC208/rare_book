@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from .models import CustomUser
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class UserTests(APITestCase):
@@ -10,6 +11,7 @@ class UserTests(APITestCase):
         self.register_url = reverse("register")
         self.login_url = reverse("login")
         self.profile_url = reverse("profile")
+        self.refresh_url = reverse("token_refresh")
         self.user_data = {
             "email": "user@mail.ru",
             "first_name": "Иван",
@@ -17,6 +19,9 @@ class UserTests(APITestCase):
             "password": "securePass123",
         }
         self.user = CustomUser.objects.create_user(**self.user_data)
+        self.refresh = RefreshToken.for_user(self.user)
+        self.refresh_token = str(self.refresh)
+        self.access_token = str(self.refresh.access_token)
 
     def test_register_existing_email(self):
         """Email уже зарегистрирован"""
@@ -102,3 +107,17 @@ class UserTests(APITestCase):
         response = self.client.get(self.profile_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["email"], self.user_data["email"])
+
+    def test_refresh_token_success(self):
+        """Успешное обновление токена"""
+        response = self.client.post(self.refresh_url, {"refresh": self.refresh_token})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+
+    def test_refresh_token_invalid(self):
+        """Обновление с невалидным токеном"""
+        response = self.client.post(self.refresh_url, {"refresh": "invalidtoken123"})
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("detail", response.data)
