@@ -1,0 +1,35 @@
+<nz-card *ngIf="!loadingUserData" [nzTitle]="'Профиль'">
+    <div class="user-info">
+      <p><strong>Имя:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+      <button nz-button nzType="primary" (click)="onEditProfile()">Редактировать профиль</button>
+    </div>
+  </nz-card>
+  
+  <nz-spin *ngIf="loadingUserData"></nz-spin>
+  
+  <nz-card *ngIf="!loadingOrders" [nzTitle]="'История заказов'">
+    <nz-table #orderTable [nzData]="orders" [nzBordered]="true" [nzSize]="'middle'">
+      <thead>
+        <tr>
+          <th>№ заказа</th>
+          <th>Дата</th>
+          <th>Статус</th>
+          <th>Способ оплаты</th>
+          <th>Сумма</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of orders">
+          <td>{{ order.id }}</td>
+          <td>{{ order.date }}</td>
+          <td>{{ order.status }}</td>
+          <td>{{ order.payment }}</td>
+          <td>{{ order.amount }}</td>
+        </tr>
+      </tbody>
+    </nz-table>
+  </nz-card>
+  
+  <nz-spin *ngIf="loadingOrders"></nz-spin>
+  

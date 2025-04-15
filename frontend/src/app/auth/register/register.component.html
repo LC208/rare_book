@@ -1,15 +1,15 @@
 <div class="auth-container">
-    <img src="/assets/logo.png" alt="Logo" class="logo" />
+    <img src="assets/logo.png" alt="Logo" class="logo" />
     <h2><i nz-icon nzType="user"></i> Регистрация</h2>
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
       <nz-form-item>
         <nz-form-control>
-          <input nz-input formControlName="firstName" placeholder="Введите имя" />
+          <input nz-input formControlName="first_name" placeholder="Введите имя" />
         </nz-form-control>
       </nz-form-item>
       <nz-form-item>
         <nz-form-control>
-          <input nz-input formControlName="lastName" placeholder="Введите фамилию" />
+          <input nz-input formControlName="last_name" placeholder="Введите фамилию" />
         </nz-form-control>
       </nz-form-item>
       <nz-form-item>
