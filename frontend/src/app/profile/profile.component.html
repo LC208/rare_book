@@ -1,6 +1,7 @@
 <nz-card *ngIf="!loadingUserData" [nzTitle]="'Профиль'">
     <div class="user-info">
-      <p><strong>Имя:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+      <p><strong>Имя:</strong>{{ user.first_name }}</p>
+      <p><strong>Фамилия:</strong>{{ user.last_name }}</p>
       <p><strong>Email:</strong> {{ user.email }}</p>
       <button nz-button nzType="primary" (click)="onEditProfile()">Редактировать профиль</button>
     </div>
