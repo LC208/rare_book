@@ -6,8 +6,6 @@ services:
       dockerfile: Dockerfile.dev
     container_name: frontend
     network_mode: host
-    ports:
-      - "4201:4200"
     volumes:
       - ./frontend:/frontend
       - /frontend/node_modules
