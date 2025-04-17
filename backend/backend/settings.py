@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     "users",
+    "books",
+    "orders",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
 ]

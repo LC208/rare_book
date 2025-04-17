@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { AppConfig } from '../app.config';
 import { Observable } from 'rxjs';
@@ -7,7 +8,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class AuthService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
 
   login(data: any): Observable<any> {
     return this.http.post(`${AppConfig.apiBaseUrl}${AppConfig.auth.loginEndpoint}`, data);
@@ -26,16 +27,23 @@ export class AuthService {
   }
 
   storeTokens(access: string, refresh: string): void {
-    localStorage.setItem('access_token', access);
-    localStorage.setItem('refresh_token', refresh);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
+    }
   }
 
   getAccessToken(): string | null {
-    return localStorage.getItem('access_token');
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem('access_token');
+    }
+    return null;
   }
 
   clearTokens(): void {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
   }
 }

@@ -56,12 +56,17 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         this.message.error('Ошибка загрузки истории заказов');
-        // console.error(err);
       },
     });
   }
 
   onEditProfile() {
     console.log('Редактировать профиль');
+  }
+
+  onLogOut()
+  {
+    this.authService.clearTokens();
+    this.router.navigate(['/']);
   }
 }

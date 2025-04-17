@@ -1,0 +1,20 @@
+<nav class="navbar">
+    <a routerLink="/" class="logo">
+        <img src="assets/logo.png" alt="Logo" />
+    </a>
+  
+    <ul class="nav-links">
+      <li><a routerLink="/">Главная</a></li>
+  
+      <ng-container *ngIf="authService.getAccessToken(); else guestLinks">
+        <li><a routerLink="/profile">Профиль</a></li>
+        <li><a href="#" (click)="logout()">Выйти</a></li>
+      </ng-container>
+  
+      <ng-template #guestLinks>
+        <li><a routerLink="/login">Вход</a></li>
+        <li><a routerLink="/register">Регистрация</a></li>
+      </ng-template>
+    </ul>
+  </nav>
+  

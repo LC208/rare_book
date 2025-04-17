@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpEvent, HttpInterceptor, HttpHandler, HttpRequest, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
@@ -10,27 +10,29 @@ export class AuthInterceptor implements HttpInterceptor {
   
   constructor(
     private authService: AuthService, 
-    private router: Router
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const accessToken = this.authService.getAccessToken();
-    
-    if (accessToken) {
-      const clonedRequest = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+  intercept(req: HttpRequest<any>, next: HttpHandler, ): Observable<HttpEvent<any>> {
 
-      return next.handle(clonedRequest).pipe(
-        catchError((error: HttpErrorResponse) => {
-          if (error.status === 401) {
-            return this.refreshToken(req, next);
-          }
-          return throwError(() => new Error(error.message)); 
-        })
-      );
+      const accessToken = this.authService.getAccessToken();
+        
+      if (accessToken) {
+        const clonedRequest = req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        return next.handle(clonedRequest).pipe(
+          catchError((error: HttpErrorResponse) => {
+            if (error.status === 401) {
+              return this.refreshToken(req, next);
+            }
+            return throwError(() => new Error(error.message)); 
+          })
+        );
     }
 
     return next.handle(req);

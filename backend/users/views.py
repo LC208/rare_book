@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, LoginSerializer
+from .serializers import RegisterSerializer, LoginSerializer, CustomUserSerializer
 from .models import CustomUser
 
 
@@ -33,16 +33,7 @@ class LoginView(generics.GenericAPIView):
 
 class ProfileView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomUserSerializer
 
     def get_object(self):
         return self.request.user
-
-    def retrieve(self, request, *args, **kwargs):
-        user = self.get_object()
-        return Response(
-            {
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-            }
-        )

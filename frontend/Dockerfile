@@ -11,7 +11,7 @@ RUN npm run build --prod
 
 FROM nginx:stable-alpine
 
-COPY --from=builder /frontend/dist/frontend/browser/* /usr/share/nginx/html
+COPY --from=builder /frontend/dist/frontend/* /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

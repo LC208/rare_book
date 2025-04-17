@@ -3,6 +3,13 @@ from .models import CustomUser
 from django.contrib.auth import authenticate
 
 
+class CustomUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomUser
+        exclude = ["password"]
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
