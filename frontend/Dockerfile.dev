@@ -1,6 +1,6 @@
-FROM node:18-alpine AS builder
+FROM node:14
 
-WORKDIR /frontend
+WORKDIR ./app
 
 COPY package*.json ./
 
@@ -8,4 +8,6 @@ RUN npm install
 
 COPY . .
 
-CMD ["npm", "run", "start"]
+ENV CHOKIDAR_USEPOLLING=true
+
+CMD ["npm", "start"]
