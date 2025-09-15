@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../utils/axios';
+import { useAuth } from "../hooks/useAuth";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
+  const { logout } = useAuth();
 
   useEffect(() => {
     axios.get('users/profile/')
@@ -24,6 +26,7 @@ const Profile = () => {
       {error && (
         <p style={{ color: 'red' }}>{error}</p>
       )}
+      <button onClick={logout}>Выйти</button>
     </div>
   );
 };
