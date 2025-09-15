@@ -1,84 +1,89 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth'; // твой хук для авторизации
+import { Drawer, Button } from 'antd';
+import { MenuOutlined } from '@ant-design/icons';
+import { useAuth } from '../hooks/useAuth';
+import './Navbar.css';
 import logo from '../assets/logo.png';
 
 const Navbar = () => {
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+    setDrawerVisible(false);
   };
 
+const menuLinks = (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'flex-start' }}>
+    <Link to="/" onClick={() => setDrawerVisible(false)} style={{ color: '#000' }}>Главная</Link>
+    {isAuthenticated ? (
+      <>
+        <Link to="/profile" onClick={() => setDrawerVisible(false)} style={{ color: '#000' }}>Профиль</Link>
+        <Button
+          type="link"
+          onClick={handleLogout}
+          style={{
+            padding: 0,
+            color: '#000',
+            textAlign: 'left'
+          }}
+        >
+          Выйти
+        </Button>
+      </>
+    ) : (
+      <>
+        <Link to="/login" onClick={() => setDrawerVisible(false)} style={{ color: '#000' }}>Вход</Link>
+        <Link to="/register" onClick={() => setDrawerVisible(false)} style={{ color: '#000' }}>Регистрация</Link>
+      </>
+    )}
+  </div>
+);
+
+
   return (
-    <nav style={styles.navbar}>
-      <Link to="/" style={styles.logo}>
+    <nav className="navbar">
+      <Link to="/" className="logo">
         <img src={logo} alt="Logo" style={{ height: 40 }} />
       </Link>
 
-      <ul style={styles.navLinks}>
-        <li>
-          <Link to="/" style={styles.link}>Главная</Link>
-        </li>
-
+      <ul className="nav-links">
+        <li><Link to="/">Главная</Link></li>
         {isAuthenticated ? (
           <>
-            <li>
-              <Link to="/profile" style={styles.link}>Профиль</Link>
-            </li>
-            <li>
-              <button onClick={handleLogout} style={styles.logoutButton}>Выйти</button>
-            </li>
+            <li><Link to="/profile">Профиль</Link></li>
+            <li><Button type="link" onClick={handleLogout} style={{ padding: 0, color: '#fff' }}>Выйти</Button></li>
           </>
         ) : (
           <>
-            <li>
-              <Link to="/login" style={styles.link}>Вход</Link>
-            </li>
-            <li>
-              <Link to="/register" style={styles.link}>Регистрация</Link>
-            </li>
+            <li><Link to="/login">Вход</Link></li>
+            <li><Link to="/register">Регистрация</Link></li>
           </>
         )}
       </ul>
+
+      <Button
+        className="hamburger-button"
+        type="text"
+        icon={<MenuOutlined style={{ fontSize: 24, color: '#fff' }} />}
+        onClick={() => setDrawerVisible(true)}
+      />
+
+      <Drawer
+        placement="right"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        bodyStyle={{ padding: 20 }}
+        headerStyle={{ backgroundColor: '#DE7625', borderBottom: 'none' }}
+      >
+        {menuLinks}
+      </Drawer>
     </nav>
   );
-};
-
-const styles = {
-  navbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '0 20px',
-    backgroundColor: '#DE7625',
-    height: 60,
-  },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  navLinks: {
-    listStyle: 'none',
-    display: 'flex',
-    gap: 20,
-    margin: 0,
-    padding: 0,
-  },
-  link: {
-    color: '#fff',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-  },
-  logoutButton: {
-    background: 'transparent',
-    border: 'none',
-    color: '#fff',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
 };
 
 export default Navbar;
