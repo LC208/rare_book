@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Row, Col } from "antd";
+import { Form, Input, Button, Row, Col, notification } from "antd";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../utils/axios";
 import { useAuth } from "../hooks/useAuth";
@@ -16,6 +16,7 @@ const LoginForm = () => {
       login(accessToken);
       navigate("/profile");
     } catch (err) {
+      // Если сервер вернул ошибки полей
       if (err.response?.data) {
         const fields = Object.keys(err.response.data).map((key) => ({
           name: key,
@@ -25,6 +26,12 @@ const LoginForm = () => {
         }));
         setErrorFields(fields);
       }
+      // Показываем уведомление
+      notification.error({
+        message: "Ошибка входа",
+        description: err.response?.data?.detail || "Неверный email или пароль",
+        placement: "topRight",
+      });
     }
   };
 

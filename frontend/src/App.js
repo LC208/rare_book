@@ -3,31 +3,32 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
 import Profile from "./components/Profile";
-import { useAuth } from "./hooks/useAuth";
 import Navbar from './components/Navbar';
+import PublicRoute from './routes/PublicRoute';
+import PrivateRoute from './routes/PrivateRoute';
 
-// Защищённый маршрут
-const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
 
 const App = () => {
   return (
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/register" element={<RegisterForm />} />
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route path="/login" element={
+          <PublicRoute>
+            <LoginForm />
+          </PublicRoute>
+        } />
+        <Route path="/register" element={
+          <PublicRoute>
+            <RegisterForm />
+          </PublicRoute>
+        } />
+        <Route path="/profile" element={
+          <PrivateRoute>
+            <Profile />
+          </PrivateRoute>
+        } />
+        <Route path="/" element={<h1>Главная</h1>} />
       </Routes>
     </Router>
   );

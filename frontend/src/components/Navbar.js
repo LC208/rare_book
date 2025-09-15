@@ -23,7 +23,7 @@ const menuLinks = (
     {isAuthenticated ? (
       <>
         <Link to="/profile" onClick={() => setDrawerVisible(false)} style={{ color: '#000' }}>Профиль</Link>
-        <Button
+        <Link
           type="link"
           onClick={handleLogout}
           style={{
@@ -33,7 +33,7 @@ const menuLinks = (
           }}
         >
           Выйти
-        </Button>
+        </Link>
       </>
     ) : (
       <>
@@ -56,7 +56,7 @@ const menuLinks = (
         {isAuthenticated ? (
           <>
             <li><Link to="/profile">Профиль</Link></li>
-            <li><Button type="link" onClick={handleLogout} style={{ padding: 0, color: '#fff' }}>Выйти</Button></li>
+            <li><Link type="link" onClick={handleLogout} style={{ padding: 0, color: '#fff' }}>Выйти</Link></li>
           </>
         ) : (
           <>
