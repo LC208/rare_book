@@ -4,6 +4,7 @@ import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
 import Profile from "./components/Profile";
 import { useAuth } from "./hooks/useAuth";
+import Navbar from './components/Navbar';
 
 // Защищённый маршрут
 const PrivateRoute = ({ children }) => {
@@ -14,6 +15,7 @@ const PrivateRoute = ({ children }) => {
 const App = () => {
   return (
     <Router>
+      <Navbar />
       <Routes>
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
