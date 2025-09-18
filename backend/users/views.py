@@ -5,7 +5,7 @@ from .serializers import RegisterSerializer, LoginSerializer, CustomUserSerializ
 from .models import CustomUser
 from django.utils.timezone import now
 from rest_framework.views import APIView
-
+from datetime import timedelta
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -50,7 +50,8 @@ class LoginView(generics.GenericAPIView):
             value=str(refresh),
             httponly=True,
             secure=True,
-            samesite="Strict"
+            samesite="Strict",
+            expires=now() + timedelta(days=7),
         )
 
         return response

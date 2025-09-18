@@ -2,7 +2,7 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:8000/",
-  withCredentials: true, // обязательно, чтобы куки (refresh token) передавались
+  withCredentials: true, // обязательно, чтобы refresh в куке работал
 });
 
 // Добавляем access token к каждому запросу
@@ -18,28 +18,31 @@ axiosInstance.interceptors.request.use((config) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && !error.config._retry) {
-      error.config._retry = true;
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
 
       try {
-        // запрос на обновление токена
-        const refreshResponse = await axios.post(
-          "http://localhost:8000/users/refresh/",
-          {},
-          { withCredentials: true }
-        );
+        // обновляем access token
+        const refreshResponse = await axiosInstance.post("users/refresh/", {});
+        const newAccessToken = refreshResponse.data.access;
 
-        const newAccessToken = refreshResponse.data.accessToken;
+        // сохраняем новый токен
         localStorage.setItem("accessToken", newAccessToken);
 
-        // повторяем запрос с новым токеном
-        error.config.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axiosInstance(error.config);
+        // обновляем заголовок и повторяем запрос
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error("Ошибка при обновлении токена", refreshError);
-        // Тут можно вызвать logout()
+
+        // удаляем токен и редиректим на логин
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login"; // либо вызвать logout() из useAuth
       }
     }
+
     return Promise.reject(error);
   }
 );
