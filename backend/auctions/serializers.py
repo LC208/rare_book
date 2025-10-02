@@ -5,7 +5,7 @@ from books.models import Book
 
 class AuctionSerializer(serializers.ModelSerializer):
     product_title = serializers.CharField(source='product.title', read_only=True)
-    status_display = serializers.CharField(source='status_display', read_only=True)
+    status_display = serializers.CharField(read_only=True)
     is_active_now = serializers.SerializerMethodField()
 
     class Meta:

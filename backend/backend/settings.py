@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "books",
     "orders",
     "auctions",
+    "dashboard",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
 ]

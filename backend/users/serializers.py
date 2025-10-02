@@ -4,7 +4,7 @@ from .models import CustomUser
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(source='status_display', read_only=True)
+    status_display = serializers.CharField(read_only=True)
 
     class Meta:
         model = CustomUser
