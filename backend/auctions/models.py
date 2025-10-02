@@ -1,5 +1,6 @@
 from django.db import models
-from books.models import Book  # Если аукционы привязаны к книгам
+from django.conf import settings
+from books.models import Book
 from django.utils import timezone
 
 
@@ -34,3 +35,17 @@ class Auction(models.Model):
         """Проверка, активен ли аукцион по времени и статусу"""
         now = timezone.now()
         return self.status == 2 and self.start_time <= now <= self.end_time
+
+
+class Bid(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bids')
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='bids')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} -> {self.auction.id}: {self.amount}"
