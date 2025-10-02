@@ -1,8 +1,6 @@
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import OrderSerializer, OrderListSerializer
-from .models import Order
+from rest_framework import generics, permissions
+from orders.models import Order
+from .serializers import OrderSerializer
 
 
 class OrderHistoryView(generics.ListAPIView):
@@ -10,4 +8,4 @@ class OrderHistoryView(generics.ListAPIView):
     serializer_class = OrderSerializer
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user.id)
+        return Order.objects.filter(user=self.request.user).prefetch_related('items__book').order_by('-date')

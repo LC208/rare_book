@@ -86,7 +86,6 @@ const Profile = () => {
   };
 
   return (
-    <ConfigProvider>
       <div style={{ maxWidth: 900, margin: "20px auto" }}>
         <Card title={<Title level={3}>Профиль</Title>} variant="outlined" style={{ marginBottom: 24 }}>
           {loadingUser ? <Spin /> : (
@@ -123,7 +122,6 @@ const Profile = () => {
           {selectedRecord?.items ? renderDetailsTable(selectedRecord.items) : <p>Нет данных</p>}
         </Drawer>
       </div>
-    </ConfigProvider>
   );
 };
 
