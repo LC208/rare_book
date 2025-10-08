@@ -2,7 +2,7 @@ from django.urls import path
 from .views import AuctionListView, AuctionDetailView, BidCreateView, UserBidListView, AuctionBidListView
 
 urlpatterns = [
-    path('', AuctionListView.as_view(), name='list'),
+    path('history', AuctionListView.as_view(), name='list'),
     path('<int:pk>/', AuctionDetailView.as_view(), name='detail'),
     path('bids/', BidCreateView.as_view(), name='bid-create'),
     path('bids/history/', UserBidListView.as_view(), name='bid-history'),

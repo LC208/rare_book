@@ -6,6 +6,9 @@ import Profile from "./components/Profile";
 import Navbar from './components/Navbar';
 import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
+import ProtectedRoute from './routes/ProtectedRoute';
+import AdminDashboard from './components/AdminDashboard';
+
 
 
 const App = () => {
@@ -29,6 +32,14 @@ const App = () => {
           </PrivateRoute>
         } />
         <Route path="/" element={<h1>Главная</h1>} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

@@ -58,7 +58,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         validators=[RegexValidator(r'^[A-Za-zА-Яа-яёЁ]+$', message="Фамилия должна содержать только буквы")]
     )
     password = models.CharField(
-        max_length=64,
+        max_length=128,
         validators=[MinLengthValidator(8)],
         verbose_name="Пароль"
     )

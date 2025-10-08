@@ -1,13 +1,18 @@
 from rest_framework.routers import DefaultRouter
-from .views import BookViewSet, OrderViewSet, AuctionViewSet, BidViewSet
+from .views import BookViewSet, OrderViewSet, AuctionViewSet, BidViewSet, CustomUserViewSet, AuthorViewSet, GenreViewSet, PublisherViewSet
 from django.urls import path, include
 
 router = DefaultRouter()
 router.register(r'books', BookViewSet)
+router.register(r'authors', AuthorViewSet)
+router.register(r'genres', GenreViewSet)
+router.register(r'publishers', PublisherViewSet)
 router.register(r'orders', OrderViewSet)
 router.register(r'auctions', AuctionViewSet)
 router.register(r'bids', BidViewSet)
+router.register(r'users', CustomUserViewSet)
+
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]
