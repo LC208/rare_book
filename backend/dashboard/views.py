@@ -33,7 +33,7 @@ class BookViewSet(viewsets.ModelViewSet):
     permission_classes = [AdminPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'genres', 'condition']
-    search_fields = ['title', 'author', 'isbn']
+    search_fields = ['title', 'authors', 'isbn']
     ordering_fields = ['price', 'year', 'title']
 
 
