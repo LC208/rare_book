@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Table, Button, Tabs, Spin, Typography, Space, message, Drawer, Form, Input, Select, Switch, InputNumber, DatePicker } from "antd";
-import { ReloadOutlined, EyeOutlined, SaveOutlined, PlusOutlined } from "@ant-design/icons";
+import { ReloadOutlined, EyeOutlined, SaveOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import axios from "../utils/axios";
 import moment from "moment";
 import { Upload } from "antd";
@@ -8,13 +8,11 @@ import { InboxOutlined } from "@ant-design/icons";
 
 const { Dragger } = Upload;
 
-
 const { Title } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
 
 const DashboardContent = () => {
-
   const [books, setBooks] = useState([]);
   const [orders, setOrders] = useState([]);
   const [auctions, setAuctions] = useState([]);
@@ -30,6 +28,11 @@ const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState("books");
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Состояния для поиска и фильтров
+  const [searchText, setSearchText] = useState("");
+  const [searchedColumn, setSearchedColumn] = useState("");
+  const [filters, setFilters] = useState({});
 
   const [form] = Form.useForm();
 
@@ -57,12 +60,70 @@ const DashboardContent = () => {
     fetchData("dashboard/publishers/", setPublishers);
   }, []);
 
+  // Функции для поиска и фильтрации
+  const handleSearch = (selectedKeys, confirm, dataIndex) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
+
+  const handleReset = (clearFilters, confirm) => {
+    clearFilters();
+    setSearchText("");
+    confirm();
+  };
+
+  const getColumnSearchProps = (dataIndex, title) => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }}>
+        <Input
+          placeholder={`Поиск ${title}`}
+          value={selectedKeys[0]}
+          onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Поиск
+          </Button>
+          <Button
+            onClick={() => handleReset(clearFilters, confirm)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Сброс
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: filtered => <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
+    onFilter: (value, record) => {
+      const recordValue = getNestedValue(record, dataIndex);
+      return recordValue?.toString().toLowerCase().includes(value.toLowerCase()) || false;
+    },
+  });
+
+  // Вспомогательная функция для получения вложенных значений
+  const getNestedValue = (obj, path) => {
+    if (typeof path === 'string') {
+      return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+    }
+    return obj[path];
+  };
+
   const openDetails = (record) => {
     setSelectedRecord(record);
     setCreating(false);
     form.setFieldsValue({
       ...record,
-      authors: record?.authors?.map(a => a.id) || [], // всегда массив
+      authors: record?.authors?.map(a => a.id) || [],
       genres: record?.genres?.map(g => g.id) || [],   
       publisher: record?.publisher?.id,
       product: record?.product?.id,
@@ -119,7 +180,7 @@ const DashboardContent = () => {
 
     Object.entries(values).forEach(([key, value]) => {
       if (key === "photo" && value && value.file) {
-        formData.append(key, value.file); // файл
+        formData.append(key, value.file);
       } else if (Array.isArray(value)) {
         value.forEach(v => formData.append(key, v));
       } else if (value !== undefined && value !== null) {
@@ -127,7 +188,6 @@ const DashboardContent = () => {
       }
     });
 
-    // Для связанных полей
     if (values.authors) values.authors.forEach(a => formData.append('authors_ids', a));
     if (values.genres) values.genres.forEach(g => formData.append('genres_ids', g));
     if (values.publisher) formData.append('publisher_id', values.publisher);
@@ -219,21 +279,20 @@ const DashboardContent = () => {
             </Form.Item>
 
             <Form.Item name="photo" label="Обложка книги" valuePropName="file">
-            <Dragger
-              name="photo"
-              listType="picture"
-              beforeUpload={() => false} // предотвращаем автоматическую загрузку
-              maxCount={1}
-            >
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">Перетащите файл или кликните для загрузки</p>
-            </Dragger>
-          </Form.Item>
+              <Dragger
+                name="photo"
+                listType="picture"
+                beforeUpload={() => false}
+                maxCount={1}
+              >
+                <p className="ant-upload-drag-icon">
+                  <InboxOutlined />
+                </p>
+                <p className="ant-upload-text">Перетащите файл или кликните для загрузки</p>
+              </Dragger>
+            </Form.Item>
           </>
         );
-
 
       case "auctions":
         return (
@@ -356,22 +415,58 @@ const DashboardContent = () => {
         return null;
     }
   };
-  
-  
+
   const columns = {
     books: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Название", dataIndex: "title" },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Название", 
+        dataIndex: "title",
+        sorter: (a, b) => a.title.localeCompare(b.title),
+        ...getColumnSearchProps('title', 'название')
+      },
       { 
         title: "Автор", 
-        
-        render: (_, record) => record.authors?.map(a => a.name).join(", ") || "-" 
+        render: (_, record) => record.authors?.map(a => a.name).join(", ") || "-",
+        filters: [...new Set(books.flatMap(b => b.authors?.map(a => a.name) || []))].map(name => ({
+          text: name,
+          value: name,
+        })),
+        onFilter: (value, record) => record.authors?.some(a => a.name === value),
+        filterSearch: true,
       },
-      { title: "Цена", dataIndex: "price", align: "right", render: val => `${val} ₽` },
-      { title: "Состояние", dataIndex: "condition_display" },
+      { 
+        title: "Цена", 
+        dataIndex: "price", 
+        align: "right", 
+        render: val => `${val} ₽`,
+        sorter: (a, b) => a.price - b.price,
+      },
+      { 
+        title: "Состояние", 
+        dataIndex: "condition_display",
+        filters: [
+          { text: 'Отличное', value: 'Отличное' },
+          { text: 'Хорошее', value: 'Хорошее' },
+          { text: 'Удовлетворительное', value: 'Удовлетворительное' },
+        ],
+        onFilter: (value, record) => record.condition_display === value,
+      },
       { 
         title: "Жанр", 
-        render: (_, record) => record.genres?.map(g => g.name).join(", ") || "-" 
+        render: (_, record) => record.genres?.map(g => g.name).join(", ") || "-",
+        filters: [...new Set(books.flatMap(b => b.genres?.map(g => g.name) || []))].map(name => ({
+          text: name,
+          value: name,
+        })),
+        onFilter: (value, record) => record.genres?.some(g => g.name === value),
+        filterSearch: true,
       },
       { 
         title: "Действия", 
@@ -383,11 +478,45 @@ const DashboardContent = () => {
       },
     ],
     orders: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Пользователь", dataIndex: "user_email" },
-      { title: "Статус", dataIndex: "status_display" },
-      { title: "Оплата", dataIndex: "payment_display" },
-      { title: "Сумма", dataIndex: "amount", align: "right", render: val => `${val} ₽` },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Пользователь", 
+        dataIndex: "user_email",
+        sorter: (a, b) => a.user_email.localeCompare(b.user_email),
+        ...getColumnSearchProps('user_email', 'email пользователя')
+      },
+      { 
+        title: "Статус", 
+        dataIndex: "status_display",
+        filters: [
+          { text: 'Ожидает оплаты', value: 'Ожидает оплаты' },
+          { text: 'Оплачен', value: 'Оплачен' },
+          { text: 'Отменён', value: 'Отменён' },
+        ],
+        onFilter: (value, record) => record.status_display === value,
+      },
+      { 
+        title: "Оплата", 
+        dataIndex: "payment_display",
+        filters: [
+          { text: 'При получении', value: 'При получении' },
+          { text: 'Картой', value: 'Картой' },
+        ],
+        onFilter: (value, record) => record.payment_display === value,
+      },
+      { 
+        title: "Сумма", 
+        dataIndex: "amount", 
+        align: "right", 
+        render: val => `${val} ₽`,
+        sorter: (a, b) => a.amount - b.amount,
+      },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -398,11 +527,44 @@ const DashboardContent = () => {
       },
     ],
     auctions: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Книга", dataIndex: ["product", "title"] },
-      { title: "Стартовая цена", dataIndex: "starting_price", align: "right", render: val => `${val} ₽` },
-      { title: "Текущая ставка", dataIndex: "current_bid", align: "right", render: val => `${val} ₽` },
-      { title: "Статус", dataIndex: "status_display" },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Книга", 
+        dataIndex: ["product", "title"],
+        sorter: (a, b) => a.product?.title?.localeCompare(b.product?.title),
+        ...getColumnSearchProps('product.title', 'название книги')
+      },
+      { 
+        title: "Стартовая цена", 
+        dataIndex: "starting_price", 
+        align: "right", 
+        render: val => `${val} ₽`,
+        sorter: (a, b) => a.starting_price - b.starting_price,
+      },
+      { 
+        title: "Текущая ставка", 
+        dataIndex: "current_bid", 
+        align: "right", 
+        render: val => `${val} ₽`,
+        sorter: (a, b) => (a.current_bid || 0) - (b.current_bid || 0),
+      },
+      { 
+        title: "Статус", 
+        dataIndex: "status_display",
+        filters: [
+          { text: 'Запланирован', value: 'Запланирован' },
+          { text: 'Активен', value: 'Активен' },
+          { text: 'Завершён', value: 'Завершён' },
+          { text: 'Отменён', value: 'Отменён' },
+        ],
+        onFilter: (value, record) => record.status_display === value,
+      },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -413,10 +575,32 @@ const DashboardContent = () => {
       },
     ],
     bids: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Аукцион", dataIndex: ["auction", "id"] },
-      { title: "Пользователь", dataIndex: "user_email" },
-      { title: "Ставка", dataIndex: "amount", align: "right", render: val => `${val} ₽` },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Аукцион", 
+        dataIndex: ["auction", "id"],
+        sorter: (a, b) => a.auction?.id - b.auction?.id,
+        ...getColumnSearchProps('auction.id', 'ID аукциона')
+      },
+      { 
+        title: "Пользователь", 
+        dataIndex: "user_email",
+        sorter: (a, b) => a.user_email.localeCompare(b.user_email),
+        ...getColumnSearchProps('user_email', 'email пользователя')
+      },
+      { 
+        title: "Ставка", 
+        dataIndex: "amount", 
+        align: "right", 
+        render: val => `${val} ₽`,
+        sorter: (a, b) => a.amount - b.amount,
+      },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -427,12 +611,50 @@ const DashboardContent = () => {
       },
     ],
     users: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Email", dataIndex: "email" },
-      { title: "Имя", dataIndex: "first_name" },
-      { title: "Фамилия", dataIndex: "last_name" },
-      { title: "Статус", dataIndex: "status_display" },
-      { title: "Админ", dataIndex: "is_admin", render: val => val ? "Да" : "Нет" },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Email", 
+        dataIndex: "email",
+        sorter: (a, b) => a.email.localeCompare(b.email),
+        ...getColumnSearchProps('email', 'email')
+      },
+      { 
+        title: "Имя", 
+        dataIndex: "first_name",
+        sorter: (a, b) => a.first_name.localeCompare(b.first_name),
+        ...getColumnSearchProps('first_name', 'имя')
+      },
+      { 
+        title: "Фамилия", 
+        dataIndex: "last_name",
+        sorter: (a, b) => a.last_name.localeCompare(b.last_name),
+        ...getColumnSearchProps('last_name', 'фамилию')
+      },
+      { 
+        title: "Статус", 
+        dataIndex: "status_display",
+        filters: [
+          { text: 'Активен', value: 'Активен' },
+          { text: 'Заблокирован', value: 'Заблокирован' },
+        ],
+        onFilter: (value, record) => record.status_display === value,
+      },
+      { 
+        title: "Админ", 
+        dataIndex: "is_admin", 
+        render: val => val ? "Да" : "Нет",
+        filters: [
+          { text: 'Да', value: true },
+          { text: 'Нет', value: false },
+        ],
+        onFilter: (value, record) => record.is_admin === value,
+      },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -443,8 +665,19 @@ const DashboardContent = () => {
       },
     ],
     authors: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Имя автора", dataIndex: "name" },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Имя автора", 
+        dataIndex: "name",
+        sorter: (a, b) => a.name.localeCompare(b.name),
+        ...getColumnSearchProps('name', 'имя автора')
+      },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -455,8 +688,19 @@ const DashboardContent = () => {
       },
     ],
     genres: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Название жанра", dataIndex: "name" },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Название жанра", 
+        dataIndex: "name",
+        sorter: (a, b) => a.name.localeCompare(b.name),
+        ...getColumnSearchProps('name', 'название жанра')
+      },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -467,8 +711,19 @@ const DashboardContent = () => {
       },
     ],
     publishers: [
-      { title: "ID", dataIndex: "id", width: 80 },
-      { title: "Название издательства", dataIndex: "name" },
+      { 
+        title: "ID", 
+        dataIndex: "id", 
+        width: 80,
+        sorter: (a, b) => a.id - b.id,
+        ...getColumnSearchProps('id', 'ID')
+      },
+      { 
+        title: "Название издательства", 
+        dataIndex: "name",
+        sorter: (a, b) => a.name.localeCompare(b.name),
+        ...getColumnSearchProps('name', 'название издательства')
+      },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -523,7 +778,11 @@ const DashboardContent = () => {
 
         <Tabs
           activeKey={activeTab}
-          onChange={key => setActiveTab(key)}
+          onChange={key => {
+            setActiveTab(key);
+            setSearchText("");
+            setSearchedColumn("");
+          }}
           tabBarExtraContent={
             <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
               Обновить
@@ -537,6 +796,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
           <TabPane tab="Заказы" key="orders">
@@ -546,6 +806,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
           <TabPane tab="Аукционы" key="auctions">
@@ -555,6 +816,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
           <TabPane tab="Ставки" key="bids">
@@ -564,6 +826,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
           <TabPane tab="Пользователи" key="users">
@@ -573,6 +836,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
           <TabPane tab="Авторы" key="authors">
@@ -582,6 +846,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
           <TabPane tab="Жанры" key="genres">
@@ -591,6 +856,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
           <TabPane tab="Издательства" key="publishers">
@@ -600,6 +866,7 @@ const DashboardContent = () => {
               rowKey="id" 
               loading={loading}
               pagination={{ pageSize: 10 }}
+              scroll={{ x: 1000 }}
             />
           </TabPane>
         </Tabs>
