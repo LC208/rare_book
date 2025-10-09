@@ -3,6 +3,20 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import Book, Author, Genre, Publisher
 from .serializers import BookSerializer, PublisherSerializer, AuthorSerializer, GenreSerializer
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, NumberFilter
+
+class BookFilter(FilterSet):
+    min_price = NumberFilter(field_name="price", lookup_expr="gte")
+    max_price = NumberFilter(field_name="price", lookup_expr="lte")
+
+    class Meta:
+        model = Book
+        fields = [
+            'id', 'authors', 'genres', 'status', 'condition', 'publisher',
+            'min_price', 'max_price'
+        ]
+
+
 
 class AuthorListView(generics.ListAPIView):
     queryset = Author.objects.all()
@@ -28,12 +42,8 @@ class BookListView(generics.ListAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [permissions.AllowAny]
-
+    filterset_class = BookFilter
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-
-    filterset_fields = [
-        'id', 'authors', 'genres', 'status', 'condition', 'publisher'
-    ]
     search_fields = ['title', 'description']
     ordering_fields = ['price', 'year', 'title']
     ordering = ['title']

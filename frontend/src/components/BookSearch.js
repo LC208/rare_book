@@ -104,31 +104,35 @@ const BookSearch = () => {
     }
   };
 
-  const fetchBooks = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
+const fetchBooks = async () => {
+  try {
+    setLoading(true);
+    const params = {};
 
-      if (filters.title) params.append("search", filters.title);
-      if (filters.authors.length > 0) params.append("authors", filters.authors.join(","));
-      if (filters.genres.length > 0) params.append("genres", filters.genres.join(","));
-      if (filters.status.length > 0) params.append("status", filters.status.join(","));
-      if (filters.condition.length > 0) params.append("condition", filters.condition.join(","));
-      if (filters.publisher.length > 0) params.append("publisher", filters.publisher.join(","));
-
-      params.append("ordering", filters.ordering);
-      params.append("limit", pageSize);
-      params.append("offset", (currentPage - 1) * pageSize);
-
-      fetchData("books/", setBooks);
-      setTotal(setBooks.length+1);
-    } catch (err) {
-      message.error("Ошибка загрузки книг");
-      console.error(err);
-    } finally {
-      setLoading(false);
+    if (filters.title) params.search = filters.title;
+    if (filters.authors.length > 0) params.authors = filters.authors.join(",");
+    if (filters.genres.length > 0) params.genres = filters.genres.join(",");
+    if (filters.status.length > 0) params.status = filters.status.join(",");
+    if (filters.condition.length > 0) params.condition = filters.condition.join(",");
+    if (filters.publisher.length > 0) params.publisher = filters.publisher.join(",");
+    if (filters.priceRange && filters.priceRange.length === 2) {
+        params.min_price = filters.priceRange[0]; // нижняя граница
+        params.max_price = filters.priceRange[1]; // верхняя граница
     }
-  };
+    params.ordering = filters.ordering;
+    params.limit = pageSize;
+    params.offset = (currentPage - 1) * pageSize;
+
+    const res = await axios.get("books/", { params });
+    setBooks(res.data.results || res.data);
+    setTotal(res.data.count || res.data.length || 0);
+  } catch (err) {
+    message.error("Ошибка загрузки книг");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
@@ -334,20 +338,37 @@ const BookSearch = () => {
           ))}
         </Select>
       </div>
-
       <div>
-        <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
-          Цена: {filters.priceRange[0]} ₽ - {filters.priceRange[1]} ₽
-        </label>
-        <Slider
-          range
-          min={0}
-          max={100000}
-          step={1000}
-          value={filters.priceRange}
-          onChange={(value) => handleFilterChange("priceRange", value)}
-        />
-      </div>
+            <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                Цена
+            </label>
+            <Space>
+                <Input
+                type="number"
+                placeholder="от"
+                value={filters.priceRange[0]}
+                onChange={(e) =>
+                    handleFilterChange("priceRange", [
+                    Number(e.target.value),
+                    filters.priceRange[1],
+                    ])
+                }
+                style={{ width: 100 }}
+                />
+                <Input
+                type="number"
+                placeholder="до"
+                value={filters.priceRange[1]}
+                onChange={(e) =>
+                    handleFilterChange("priceRange", [
+                    filters.priceRange[0],
+                    Number(e.target.value),
+                    ])
+                }
+                style={{ width: 100 }}
+                />
+            </Space>
+        </div>
 
       <div>
         <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
