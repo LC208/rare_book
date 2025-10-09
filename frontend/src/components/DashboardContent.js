@@ -356,7 +356,7 @@ const DashboardContent = () => {
         
         render: (_, record) => record.authors?.map(a => a.name).join(", ") || "-" 
       },
-      { title: "Цена", dataIndex: "price", render: val => `${val} ₽` },
+      { title: "Цена", dataIndex: "price", align: "right", render: val => `${val} ₽` },
       { title: "Состояние", dataIndex: "condition_display" },
       { 
         title: "Жанр", 
@@ -376,7 +376,7 @@ const DashboardContent = () => {
       { title: "Пользователь", dataIndex: "user_email" },
       { title: "Статус", dataIndex: "status_display" },
       { title: "Оплата", dataIndex: "payment_display" },
-      { title: "Сумма", dataIndex: "amount", render: val => `${val} ₽` },
+      { title: "Сумма", dataIndex: "amount", align: "right", render: val => `${val} ₽` },
       { 
         title: "Действия", 
         render: (_, record) => (
@@ -389,8 +389,8 @@ const DashboardContent = () => {
     auctions: [
       { title: "ID", dataIndex: "id", width: 80 },
       { title: "Книга", dataIndex: ["product", "title"] },
-      { title: "Стартовая цена", dataIndex: "starting_price", render: val => `${val} ₽` },
-      { title: "Текущая ставка", dataIndex: "current_bid", render: val => `${val} ₽` },
+      { title: "Стартовая цена", dataIndex: "starting_price", align: "right", render: val => `${val} ₽` },
+      { title: "Текущая ставка", dataIndex: "current_bid", align: "right", render: val => `${val} ₽` },
       { title: "Статус", dataIndex: "status_display" },
       { 
         title: "Действия", 
@@ -405,7 +405,7 @@ const DashboardContent = () => {
       { title: "ID", dataIndex: "id", width: 80 },
       { title: "Аукцион", dataIndex: ["auction", "id"] },
       { title: "Пользователь", dataIndex: "user_email" },
-      { title: "Ставка", dataIndex: "amount", render: val => `${val} ₽` },
+      { title: "Ставка", dataIndex: "amount", align: "right", render: val => `${val} ₽` },
       { 
         title: "Действия", 
         render: (_, record) => (

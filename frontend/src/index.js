@@ -4,6 +4,7 @@ import App from './App';
 import { ConfigProvider } from 'antd';
 import { AuthProvider } from './hooks/useAuth';
 import 'antd/dist/reset.css'; // сброс стилей
+import ruRU from "antd/locale/ru_RU";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -11,6 +12,7 @@ root.render(
   <React.StrictMode>
       <AuthProvider>
         <ConfigProvider
+          locale={ruRU}
           theme={{
             token: {
               colorPrimary: '#DE7625',       // основной цвет кнопок и ссылок

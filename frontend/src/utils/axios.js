@@ -8,7 +8,7 @@ const axiosInstance = axios.create({
 // Добавляем access token к каждому запросу
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
-  if (token) {
+  if (token && !config.url.includes("users/refresh/")) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

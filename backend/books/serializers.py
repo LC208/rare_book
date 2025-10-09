@@ -11,5 +11,5 @@ class BookSerializer(serializers.ModelSerializer):
             'id', 'title', 'authors', 'year', 'publisher',
             'condition', 'condition_display', 'description', 'price', 'photo',
             'status', 'status_display', 'genres',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'authors_list', 'genres_list'
         ]
