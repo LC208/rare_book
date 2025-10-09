@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Row, Col, Progress } from "antd";
+import { Form, Input, Button, Row, Col, Progress, notification } from "antd";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../utils/axios";
 import { useAuth } from "../hooks/useAuth";
@@ -65,11 +65,20 @@ const RegisterForm = () => {
     };
 
     try {
-      const response = await axios.post("users/register/", payload, { withCredentials: true });
-      const accessToken = response.data.access;
+      // 1. Регистрация
+      await axios.post("users/register/", payload, { withCredentials: true });
+
+      // 2. Авто-вход
+      const loginResponse = await axios.post(
+        "users/login/",
+        { email: values.email, password: values.password },
+        { withCredentials: true }
+      );
+      const accessToken = loginResponse.data.access;
+
       if (accessToken) {
-        login(accessToken);
-        navigate("/profile");
+        await login(accessToken); // обновляем контекст
+        navigate("/profile");     // редирект на профиль
       }
     } catch (err) {
       if (err.response?.data) {
@@ -81,6 +90,11 @@ const RegisterForm = () => {
         }));
         setErrorFields(fields);
       }
+      notification.error({
+        message: "Ошибка регистрации",
+        description: err.response?.data?.detail || "Не удалось зарегистрироваться",
+        placement: "topRight",
+      });
     }
   };
 
@@ -90,41 +104,24 @@ const RegisterForm = () => {
     <div style={{ maxWidth: 400, margin: "50px auto" }}>
       <h2 style={{ textAlign: "center" }}>Регистрация</h2>
       <Form layout="vertical" onFinish={handleSubmit} fields={errorFields}>
-        <Form.Item
-          name="first_name"
-          label="Имя"
-          rules={[{ validator: validateName }]}
-        >
+        <Form.Item name="first_name" label="Имя" rules={[{ validator: validateName }]}>
           <Input />
         </Form.Item>
-        <Form.Item
-          name="last_name"
-          label="Фамилия"
-          rules={[{ validator: validateName }]}
-        >
+        <Form.Item name="last_name" label="Фамилия" rules={[{ validator: validateName }]}>
           <Input />
         </Form.Item>
-        <Form.Item
-          name="email"
-          label="Почта"
-          rules={[{ validator: validateEmail }]}
-        >
+        <Form.Item name="email" label="Почта" rules={[{ validator: validateEmail }]}>
           <Input />
         </Form.Item>
-        <Form.Item
-          name="password"
-          label="Пароль"
-          rules={[{ validator: validatePassword }]}
-        >
+        <Form.Item name="password" label="Пароль" rules={[{ validator: validatePassword }]}>
           <Input.Password onChange={handlePasswordChange} />
         </Form.Item>
 
-        {/* Показываем ProgressBar только если есть текст в поле пароля */}
         {passwordText && (
           <Progress
             percent={(passwordScore + 1) * 20}
             status={passwordStatus.status}
-            showInfo={true}
+            showInfo
             format={() => passwordStatus.text}
           />
         )}
