@@ -20,10 +20,13 @@ import {
   ShoppingCartOutlined,
 } from "@ant-design/icons";
 import axios from "../utils/axios";
+import { addToCart } from "../utils/cart";
+import { useAuth } from "../hooks/useAuth";
+
+
 
 const BookSearch = () => {
   const [books, setBooks] = useState([]);
-  const [allBooks, setAllBooks] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [genres, setGenres] = useState([]);
   const [publishers, setPublishers] = useState([]);
@@ -31,6 +34,8 @@ const BookSearch = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
+  const { isAuthenticated } = useAuth();
+
 
   const [filters, setFilters] = useState({
     title: "",
@@ -156,10 +161,6 @@ const fetchBooks = async () => {
     setCurrentPage(1);
   };
 
-  const handleAddToCart = (book) => {
-    message.success(`"${book.title}" добавлена в корзину`);
-    // Здесь можно добавить логику для добавления в корзину
-  };
 
   const BookCard = ({ book }) => (
     <Card
@@ -215,7 +216,8 @@ const fetchBooks = async () => {
         </p>
       </div>
 
-      <div
+        
+        <div
         style={{
           borderTop: "1px solid #f0f0f0",
           paddingTop: 12,
@@ -226,17 +228,18 @@ const fetchBooks = async () => {
           <span style={{ fontSize: 18, fontWeight: 700, color: "#1890ff" }}>
             {book.price} ₽
           </span>
-          <Button
+          {isAuthenticated &&(    <Button
             type="primary"
             icon={<ShoppingCartOutlined />}
             size="small"
             disabled={book.status !== 1}
-            onClick={() => handleAddToCart(book)}
+            onClick={() => addToCart(book)}
           >
             В корзину
-          </Button>
+          </Button>)}
         </div>
       </div>
+
     </Card>
   );
 
