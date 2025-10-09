@@ -3,6 +3,11 @@ import { Card, Table, Button, Tabs, Spin, Typography, Space, message, Drawer, Fo
 import { ReloadOutlined, EyeOutlined, SaveOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "../utils/axios";
 import moment from "moment";
+import { Upload } from "antd";
+import { InboxOutlined } from "@ant-design/icons";
+
+const { Dragger } = Upload;
+
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -108,39 +113,33 @@ const DashboardContent = () => {
       publishers: "dashboard/publishers/",
     };
 
-    if (activeTab === "auctions") {
-      values.start_time = values.start_time?.toISOString();
-      values.end_time = values.end_time?.toISOString();
-    }
-    
-
     const url = endpointMap[activeTab] + (creating ? "" : `${selectedRecord.id}/`);
-    const valuesToSend = {
-      ...values,
-      authors_ids: values.authors,   // сериализатор ожидает authors_ids
-      genres_ids: values.genres,     // сериализатор ожидает genres_ids
-      publisher_id: values.publisher // сериализатор ожидает publisher_id
-    };
+
+    const formData = new FormData();
+
+    Object.entries(values).forEach(([key, value]) => {
+      if (key === "photo" && value && value.file) {
+        formData.append(key, value.file); // файл
+      } else if (Array.isArray(value)) {
+        value.forEach(v => formData.append(key, v));
+      } else if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
+    });
+
+    // Для связанных полей
+    if (values.authors) values.authors.forEach(a => formData.append('authors_ids', a));
+    if (values.genres) values.genres.forEach(g => formData.append('genres_ids', g));
+    if (values.publisher) formData.append('publisher_id', values.publisher);
+
     try {
       setSaving(true);
       if (creating) {
-        await axios.post(url, valuesToSend);
+        await axios.post(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       } else {
-        await axios.put(url, valuesToSend);
+        await axios.put(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       }
-
-      const labels = {
-        books: "Книга",
-        orders: "Заказ",
-        auctions: "Аукцион",
-        bids: "Ставка",
-        users: "Пользователь",
-        authors: "Автор",
-        genres: "Жанр",
-        publishers: "Издательство"
-      };
-      
-      message.success(`${labels[activeTab]} успешно ${creating ? "создан" : "обновлён"}`);
+      message.success(`Книга успешно ${creating ? "создана" : "обновлена"}`);
       handleRefresh();
       closeDrawer();
     } catch (err) {
@@ -218,6 +217,20 @@ const DashboardContent = () => {
             <Form.Item name="description" label="Описание" rules={[{ required: true }]}>
               <Input.TextArea maxLength={250} rows={4} />
             </Form.Item>
+
+            <Form.Item name="photo" label="Обложка книги" valuePropName="file">
+            <Dragger
+              name="photo"
+              listType="picture"
+              beforeUpload={() => false} // предотвращаем автоматическую загрузку
+              maxCount={1}
+            >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">Перетащите файл или кликните для загрузки</p>
+            </Dragger>
+          </Form.Item>
           </>
         );
 

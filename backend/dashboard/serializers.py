@@ -36,6 +36,8 @@ class BookSerializer(serializers.ModelSerializer):
         queryset=Publisher.objects.all(), write_only=True, source='publisher'
     )
 
+    photo = serializers.ImageField(required=False, allow_null=True)
+    
     class Meta:
         model = Book
         fields = "__all__"
