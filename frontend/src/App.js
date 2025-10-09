@@ -9,6 +9,7 @@ import PrivateRoute from './routes/PrivateRoute';
 import ProtectedRoute from './routes/ProtectedRoute';
 import AdminDashboard from './components/AdminDashboard';
 import BookSearch from './components/BookSearch';
+import Cart from './components/CartComponent';
 
 
 
@@ -33,6 +34,11 @@ const App = () => {
         <Route path="/profile" element={
           <PrivateRoute>
             <Profile />
+          </PrivateRoute>
+        } />
+        <Route path="/cart" element={
+          <PrivateRoute>
+            <Cart />
           </PrivateRoute>
         } />
         {/* <Route path="/" element={<h1>Главная</h1>} /> */}
