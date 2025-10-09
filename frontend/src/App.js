@@ -8,6 +8,7 @@ import PublicRoute from './routes/PublicRoute';
 import PrivateRoute from './routes/PrivateRoute';
 import ProtectedRoute from './routes/ProtectedRoute';
 import AdminDashboard from './components/AdminDashboard';
+import BookSearch from './components/BookSearch';
 
 
 
@@ -26,12 +27,15 @@ const App = () => {
             <RegisterForm />
           </PublicRoute>
         } />
+        <Route path="/" element={
+            <BookSearch />
+        } />
         <Route path="/profile" element={
           <PrivateRoute>
             <Profile />
           </PrivateRoute>
         } />
-        <Route path="/" element={<h1>Главная</h1>} />
+        {/* <Route path="/" element={<h1>Главная</h1>} /> */}
         <Route
           path="/dashboard"
           element={

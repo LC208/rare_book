@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Card, Table, Button, Tabs, Spin, Typography, Space, message, Drawer, Form, Input, Select, Switch, InputNumber, DatePicker } from "antd";
 import { ReloadOutlined, EyeOutlined, SaveOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "../utils/axios";
-import { useAuth } from "../hooks/useAuth";
 import moment from "moment";
 
 const { Title } = Typography;
@@ -10,7 +9,6 @@ const { TabPane } = Tabs;
 const { Option } = Select;
 
 const DashboardContent = () => {
-  const { logout } = useAuth();
 
   const [books, setBooks] = useState([]);
   const [orders, setOrders] = useState([]);

@@ -1,8 +1,25 @@
 from rest_framework import generics, permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .models import Book
-from .serializers import BookSerializer
+from .models import Book, Author, Genre, Publisher
+from .serializers import BookSerializer, PublisherSerializer, AuthorSerializer, GenreSerializer
+
+class AuthorListView(generics.ListAPIView):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class GenreListView(generics.ListAPIView):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class PublisherListView(generics.ListAPIView):
+    queryset = Publisher.objects.all()
+    serializer_class = PublisherSerializer
+    permission_classes = [permissions.AllowAny]
 
 class BookListView(generics.ListAPIView):
     """
