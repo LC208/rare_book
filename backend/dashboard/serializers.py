@@ -49,11 +49,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'book', 'book_title', 'quantity', 'price']
+        fields = ['id', 'book', 'book_title', 'price']
 
 class OrderSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(read_only=True)
-    payment_display = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    payment_display = serializers.CharField(source='get_payment_display', read_only=True)
     book_title = serializers.CharField(source='book.title', read_only=True)
     user_email = serializers.CharField(source='user.email', read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)

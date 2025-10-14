@@ -22,6 +22,8 @@ import {
 import axios from "../utils/axios";
 import { addToCart } from "../utils/cart";
 import { useAuth } from "../hooks/useAuth";
+import { Link } from "react-router-dom";
+import { Modal } from "antd";
 
 
 
@@ -35,6 +37,18 @@ const BookSearch = () => {
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
   const { isAuthenticated } = useAuth();
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const showBookModal = (book) => {
+    setSelectedBook(book);
+    setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+    setSelectedBook(null);
+  };
 
 
   const [filters, setFilters] = useState({
@@ -165,6 +179,7 @@ const fetchBooks = async () => {
   const BookCard = ({ book }) => (
     <Card
       hoverable
+      onClick={() => showBookModal(book)}
       cover={
         book.photo ? (
           <img
@@ -217,28 +232,7 @@ const fetchBooks = async () => {
       </div>
 
         
-        <div
-        style={{
-          borderTop: "1px solid #f0f0f0",
-          paddingTop: 12,
-          marginTop: "auto",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#1890ff" }}>
-            {book.price} ₽
-          </span>
-          {isAuthenticated &&(    <Button
-            type="primary"
-            icon={<ShoppingCartOutlined />}
-            size="small"
-            disabled={book.status !== 1}
-            onClick={() => addToCart(book)}
-          >
-            В корзину
-          </Button>)}
-        </div>
-      </div>
+
 
     </Card>
   );
@@ -405,8 +399,26 @@ const fetchBooks = async () => {
   return (
     <div style={{ padding: "24px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        <h1 style={{ marginBottom: 24 }}>Главная</h1>
-
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: 24 
+        }}>
+          <h1 style={{ margin: 0 }}>Главная</h1>
+          
+          {isAuthenticated && (
+            <Link to="/cart">
+              <Button
+                type="primary"
+                icon={<ShoppingCartOutlined />}
+                size="large"
+              >
+                Корзина
+              </Button>
+            </Link>
+          )}
+        </div>
         <Row gutter={[24, 24]}>
           <Col xs={24} sm={24} md={6}>
             <Card title="Фильтры" style={{ position: "sticky", top: 20 }}>
@@ -459,6 +471,80 @@ const fetchBooks = async () => {
             </Spin>
           </Col>
         </Row>
+        <Modal
+  title={selectedBook?.title}
+  open={isModalVisible}
+  onCancel={handleCloseModal}
+  footer={[
+    isAuthenticated && (
+      <Button
+        key="cart"
+        type="primary"
+        icon={<ShoppingCartOutlined />}
+        disabled={selectedBook?.status !== 1}
+        onClick={() => addToCart(selectedBook)}
+      >
+        Добавить в корзину
+      </Button>
+    ),
+    <Button key="close" onClick={handleCloseModal}>
+      Закрыть
+    </Button>,
+  ]}
+  width={700}
+>
+  {selectedBook && (
+    <div style={{ display: "flex", gap: 20 }}>
+      <div style={{ flex: "0 0 200px" }}>
+        {selectedBook.photo ? (
+          <img
+            src={selectedBook.photo}
+            alt={selectedBook.title}
+            style={{ width: "100%", borderRadius: 8 }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: 250,
+              backgroundColor: "#f0f0f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#999",
+            }}
+          >
+            Нет изображения
+          </div>
+        )}
+      </div>
+
+      <div style={{ flex: 1 }}>
+        <p><strong>Авторы:</strong> {selectedBook.authors_list || "Неизвестно"}</p>
+        <p><strong>Жанры:</strong> {selectedBook.genres_list || "—"}</p>
+        <p><strong>Издательство:</strong> {selectedBook.publisher?.name || "—"}</p>
+        <p><strong>Год:</strong> {selectedBook.year}</p>
+        <p>
+          <strong>Состояние:</strong>{" "}
+          <Tag color={CONDITION_COLORS[selectedBook.condition]}>
+            {CONDITION_CHOICES[selectedBook.condition]}
+          </Tag>
+        </p>
+        <p>
+          <strong>Статус:</strong>{" "}
+          <Tag color={STATUS_COLORS[selectedBook.status]}>
+            {STATUS_CHOICES[selectedBook.status]}
+          </Tag>
+        </p>
+        <p><strong>Цена:</strong> {selectedBook.price} ₽</p>
+        <p style={{ marginTop: 16 }}>
+          <strong>Описание:</strong><br />
+          {selectedBook.description || "Описание отсутствует"}
+        </p>
+      </div>
+    </div>
+  )}
+</Modal>
       </div>
     </div>
   );

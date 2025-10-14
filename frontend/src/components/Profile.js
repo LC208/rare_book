@@ -80,7 +80,6 @@ const Profile = () => {
     const columns = [
       { title: "Название книги", dataIndex: "name", key: "name" },
       { title: "Цена", dataIndex: "price", key: "price" },
-      { title: "Количество", dataIndex: "quantity", key: "quantity" }
     ];
     return <Table rowKey="id" dataSource={items} columns={columns} pagination={false} />;
   };

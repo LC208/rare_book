@@ -28,10 +28,10 @@ class Order(models.Model):
         return f"Заказ {self.id} от {self.user} ({self.get_status_display()})"
 
     def calculate_amount(self):
-        total = sum(item.price * item.quantity for item in self.items.all())
+        total = sum(item.price for item in self.items.all())
         self.amount = total
         self.save()
-        return total
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
@@ -40,8 +40,7 @@ class OrderItem(models.Model):
     book = models.ForeignKey(
         Book, on_delete=models.CASCADE, related_name="order_items"
     )
-    quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=8, decimal_places=2)
 
     def __str__(self):
-        return f"{self.book.title} x {self.quantity}"
+        return f"{self.book.title}"

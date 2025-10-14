@@ -33,9 +33,13 @@ const DashboardContent = () => {
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
   const [filters, setFilters] = useState({});
+const [orderItems, setOrderItems] = useState([]);
 
   const [form] = Form.useForm();
 
+
+
+  
   const fetchData = async (endpoint, setter) => {
     try {
       setLoading(true);
@@ -131,6 +135,13 @@ const DashboardContent = () => {
       start_time: record?.start_time ? moment(record.start_time) : null,
       end_time: record?.end_time ? moment(record.end_time) : null
     });
+
+    if (activeTab === "orders" && record.items) {
+      setOrderItems(record.items); // предполагаем, что API возвращает items
+    } else {
+      setOrderItems([]);
+    }
+
     setDrawerVisible(true);
   };
 
@@ -393,6 +404,22 @@ const DashboardContent = () => {
                 <Option value="C">Картой</Option>
               </Select>
             </Form.Item>
+            {orderItems.length > 0 && (
+              <Form.Item label="Товары заказа">
+                <Table
+                  dataSource={orderItems}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  columns={[
+                    { title: "ID", dataIndex: "id", width: 50 },
+                    { title: "Название книги", dataIndex: "book_title" },
+                    { title: "Цена", dataIndex: "price", align: "right", render: val => `${val} ₽` },
+                  ]}
+                  scroll={{ x: 400 }}
+                />
+              </Form.Item>
+            )}
           </>
         );
 

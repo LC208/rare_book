@@ -27,13 +27,14 @@ export const addToCart = (book) => {
 
   const existingItem = cart.find(item => item.id === book.id);
   if (existingItem) {
-    existingItem.quantity += 1;
+    message.success(`"${book.title}" уже в корзине`);
   } else {
-    cart.push({ id: book.id, title: book.title, price: book.price, quantity: 1 });
+    cart.push({ id: book.id, title: book.title, price: book.price});
+    saveCart(cart);
+    message.success(`"${book.title}" добавлена в корзину`);
   }
 
-  saveCart(cart);
-  message.success(`"${book.title}" добавлена в корзину`);
+
 };
 
 /**
@@ -54,14 +55,6 @@ export const clearCart = () => {
   message.info("Корзина очищена");
 };
 
-/**
- * Получаем количество товаров в корзине
- * @returns {number}
- */
-export const getCartCount = () => {
-  const cart = getCart();
-  return cart.reduce((sum, item) => sum + item.quantity, 0);
-};
 
 /**
  * Получаем общую стоимость корзины
@@ -69,5 +62,5 @@ export const getCartCount = () => {
  */
 export const getCartTotal = () => {
   const cart = getCart();
-  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return cart.reduce((sum, item) => Number(sum) + Number(item.price), 0);
 };
