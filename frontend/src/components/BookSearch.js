@@ -45,6 +45,7 @@ const BookSearch = () => {
     setIsModalVisible(true);
   };
 
+
   const handleCloseModal = () => {
     setIsModalVisible(false);
     setSelectedBook(null);

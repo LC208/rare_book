@@ -5,6 +5,7 @@ import axios from "../utils/axios";
 import moment from "moment";
 import { Upload } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
+import { Modal } from "antd";
 
 const { Dragger } = Upload;
 
@@ -29,14 +30,48 @@ const DashboardContent = () => {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Состояния для поиска и фильтров
   const [searchText, setSearchText] = useState("");
   const [searchedColumn, setSearchedColumn] = useState("");
   const [filters, setFilters] = useState({});
+  const [selectedBook, setSelectedBook] = useState(null);
+const [isModalVisible, setIsModalVisible] = useState(false);
 const [orderItems, setOrderItems] = useState([]);
+const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const [form] = Form.useForm();
 
+
+  const rowSelection = ["books", "users", "authors", "genres", "publishers", "auctions"].includes(activeTab)
+  ? {
+      selectedRowKeys,
+      onChange: (keys) => setSelectedRowKeys(keys),
+    }
+  : undefined; // Для заказов и ставок не отображаем
+
+
+  const handleDeleteSelected = async () => {
+  if (selectedRowKeys.length === 0) return;
+
+  try {
+    for (const id of selectedRowKeys) {
+      await axios.delete(`dashboard/${activeTab}/${id}/`);
+    }
+    message.success("Выбранные записи удалены");
+    setSelectedRowKeys([]);
+    handleRefresh(); // Обновляем таблицу
+  } catch (err) {
+    message.error(`Ошибка при удалении: ${err.response?.data?.message || err.message}`);
+  }
+};
+const showBookModal = (book) => {
+  setSelectedBook(book);
+  setIsModalVisible(true);
+};
+
+const handleCloseModal = () => {
+  setIsModalVisible(false);
+  setSelectedBook(null);
+};
 
 
   
@@ -407,6 +442,9 @@ const [orderItems, setOrderItems] = useState([]);
             {orderItems.length > 0 && (
               <Form.Item label="Товары заказа">
                 <Table
+                  onRow={(record) => ({
+    onClick: () => showBookModal(books.find(b => b.id === record.book)), // открываем модалку книги
+  })}
                   dataSource={orderItems}
                   rowKey="id"
                   pagination={false}
@@ -544,14 +582,17 @@ const [orderItems, setOrderItems] = useState([]);
         render: val => `${val} ₽`,
         sorter: (a, b) => a.amount - b.amount,
       },
-      { 
-        title: "Действия", 
+      {
+        title: "Действия",
         render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
-      },
+          <Space>
+            <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
+              Подробнее
+            </Button>
+
+          </Space>
+        ),
+      }
     ],
     auctions: [
       { 
@@ -803,6 +844,16 @@ const [orderItems, setOrderItems] = useState([]);
           </Button>
         )}
 
+        {["books", "users", "authors", "genres", "publishers", "auctions"].includes(activeTab) && selectedRowKeys.length > 0 && (
+          <Button 
+            danger 
+            style={{ marginLeft: 8 }} 
+            onClick={handleDeleteSelected}
+          >
+            Удалить выбранные
+          </Button>
+        )}
+
         <Tabs
           activeKey={activeTab}
           onChange={key => {
@@ -824,6 +875,7 @@ const [orderItems, setOrderItems] = useState([]);
               loading={loading}
               pagination={{ pageSize: 10 }}
               scroll={{ x: 1000 }}
+              rowSelection={rowSelection}
             />
           </TabPane>
           <TabPane tab="Заказы" key="orders">
@@ -844,6 +896,7 @@ const [orderItems, setOrderItems] = useState([]);
               loading={loading}
               pagination={{ pageSize: 10 }}
               scroll={{ x: 1000 }}
+              rowSelection={rowSelection}
             />
           </TabPane>
           <TabPane tab="Ставки" key="bids">
@@ -864,6 +917,7 @@ const [orderItems, setOrderItems] = useState([]);
               loading={loading}
               pagination={{ pageSize: 10 }}
               scroll={{ x: 1000 }}
+              rowSelection={rowSelection}
             />
           </TabPane>
           <TabPane tab="Авторы" key="authors">
@@ -874,6 +928,7 @@ const [orderItems, setOrderItems] = useState([]);
               loading={loading}
               pagination={{ pageSize: 10 }}
               scroll={{ x: 1000 }}
+              rowSelection={rowSelection}
             />
           </TabPane>
           <TabPane tab="Жанры" key="genres">
@@ -884,6 +939,7 @@ const [orderItems, setOrderItems] = useState([]);
               loading={loading}
               pagination={{ pageSize: 10 }}
               scroll={{ x: 1000 }}
+              rowSelection={rowSelection}
             />
           </TabPane>
           <TabPane tab="Издательства" key="publishers">
@@ -894,6 +950,7 @@ const [orderItems, setOrderItems] = useState([]);
               loading={loading}
               pagination={{ pageSize: 10 }}
               scroll={{ x: 1000 }}
+              rowSelection={rowSelection}
             />
           </TabPane>
         </Tabs>
@@ -928,6 +985,59 @@ const [orderItems, setOrderItems] = useState([]);
           {renderFormFields()}
         </Form>
       </Drawer>
+      <Modal
+  title={selectedBook?.title}
+  open={isModalVisible}
+  onCancel={handleCloseModal}
+  footer={[
+    <Button key="close" onClick={handleCloseModal}>
+      Закрыть
+    </Button>,
+  ]}
+  width={700}
+>
+  {selectedBook && (
+    <div style={{ display: "flex", gap: 20 }}>
+      <div style={{ flex: "0 0 200px" }}>
+        {selectedBook.photo ? (
+          <img
+            src={selectedBook.photo}
+            alt={selectedBook.title}
+            style={{ width: "100%", borderRadius: 8 }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: 250,
+              backgroundColor: "#f0f0f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#999",
+            }}
+          >
+            Нет изображения
+          </div>
+        )}
+      </div>
+      <div style={{ flex: 1 }}>
+        <p><strong>Авторы:</strong> {selectedBook.authors?.map(a => a.name).join(", ") || "Неизвестно"}</p>
+        <p><strong>Жанры:</strong> {selectedBook.genres?.map(g => g.name).join(", ") || "—"}</p>
+        <p><strong>Издательство:</strong> {selectedBook.publisher?.name || "—"}</p>
+        <p><strong>Год:</strong> {selectedBook.year}</p>
+        <p><strong>Состояние:</strong> {selectedBook.condition_display || "—"}</p>
+        <p><strong>Статус:</strong> {selectedBook.status_display || "—"}</p>
+        <p><strong>Цена:</strong> {selectedBook.price} ₽</p>
+        <p style={{ marginTop: 16 }}>
+          <strong>Описание:</strong><br />
+          {selectedBook.description || "Описание отсутствует"}
+        </p>
+      </div>
+    </div>
+  )}
+</Modal>
+
     </div>
   );
 };
