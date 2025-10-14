@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, Spin, Table, Typography, Modal } from "antd";
+import { Card, Button, Spin, Table, Typography, Modal, Form, Input, Progress, notification } from "antd";
 import axios from "../utils/axios";
 import { useAuth } from "../hooks/useAuth";
+import zxcvbn from "zxcvbn";
 
 const { Title } = Typography;
 
@@ -22,6 +23,83 @@ const Profile = () => {
   const [selectedBook, setSelectedBook] = useState(null);
   const [loadingBook, setLoadingBook] = useState(false);
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+  });
+  const [passwordScore, setPasswordScore] = useState(0);
+  const [passwordText, setPasswordText] = useState("");
+  const [form] = Form.useForm();
+
+
+    const getPasswordStatus = () => {
+    switch (passwordScore) {
+      case 0: return { status: "exception", text: "Очень слабый" };
+      case 1: return { status: "exception", text: "Слабый" };
+      case 2: return { status: "normal", text: "Средний" };
+      case 3: return { status: "success", text: "Хороший" };
+      case 4: return { status: "success", text: "Сильный" };
+      default: return { status: "exception", text: "" };
+    }
+  };
+
+
+    const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPasswordText(value);
+    setPasswordScore(zxcvbn(value).score);
+  };
+const PASSWORD_BLACKLIST = ["12345678", "password", "qwerty"];
+
+  const validatePassword = (_, value) => {
+    if (!value) return Promise.resolve(); // разрешаем не менять пароль
+    if (value.length < 8) return Promise.reject(new Error("Пароль должен быть не менее 8 символов"));
+    if (value.includes(" ")) return Promise.reject(new Error("Пароль не должен содержать пробелы"));
+    if (PASSWORD_BLACKLIST.includes(value)) return Promise.reject(new Error("Пароль слишком простой"));
+    if (zxcvbn(value).score < 2) return Promise.reject(new Error("Пароль слишком простой, используйте более сложный"));
+    return Promise.resolve();
+  };
+
+  const validateName = (_, value) => {
+    if (!value) return Promise.reject(new Error("Поле обязательно"));
+    if (value.length > 50) return Promise.reject(new Error("Слишком длинное имя/фамилия (максимум 50 символов)"));
+    if (/[^а-яА-ЯёЁa-zA-Z\-]/.test(value)) return Promise.reject(new Error("Недопустимые символы, только буквы и дефис"));
+    return Promise.resolve();
+  };
+
+  const passwordStatus = getPasswordStatus();
+const openEditModal = () => {
+  const initialValues = {
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email,
+    password: "",
+  };
+  setEditForm(initialValues);
+  form.setFieldsValue(initialValues); // <-- установка значений в форму
+  setIsEditModalOpen(true);
+};
+
+  const closeEditModal = () => setIsEditModalOpen(false);
+
+const handleSaveProfile = async (values) => {
+  try {
+    const payload = {
+      first_name: values.first_name,
+      last_name: values.last_name,
+    };
+    if (values.password) payload.password = values.password;
+
+    const res = await axios.put("users/profile/", payload);
+    setUser(res.data);
+    setIsEditModalOpen(false);
+  } catch (err) {
+    console.error(err);
+    alert("Ошибка при обновлении профиля");
+  }
+};
 
   // Получение профиля
   useEffect(() => {
@@ -96,6 +174,8 @@ const Profile = () => {
     );
   };
 
+
+
   // Таблица заказов / аукционов
   const renderTable = (data, type) => {
     const columns = [
@@ -125,7 +205,7 @@ const Profile = () => {
             <p><strong>Фамилия:</strong> {user.last_name}</p>
             <p><strong>Email:</strong> {user.email}</p>
             <div style={{ marginTop: 16 }}>
-              <Button type="primary" style={{ marginRight: 8 }}>Редактировать профиль</Button>
+              <Button type="primary" style={{ marginRight: 8 }} onClick={openEditModal}>Редактировать профиль</Button>
               <Button danger onClick={logout}>Выйти</Button>
             </div>
           </>
@@ -205,6 +285,41 @@ const Profile = () => {
         ) : (
           <p>Данные книги не найдены</p>
         )}
+      </Modal>
+
+            <Modal
+        title="Редактировать профиль"
+        open={isEditModalOpen}
+        onCancel={closeEditModal}
+        onOk={() => form.submit()}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSaveProfile}
+        >
+          <Form.Item name="email" label="Email">
+            <Input disabled />
+          </Form.Item>
+          <Form.Item name="first_name" label="Имя" rules={[{ validator: validateName }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="last_name" label="Фамилия" rules={[{ validator: validateName }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="password" label="Новый пароль" rules={[{ validator: validatePassword }]}>
+            <Input.Password onChange={handlePasswordChange} placeholder="Оставьте пустым, чтобы не менять" />
+          </Form.Item>
+
+          {passwordText && (
+            <Progress
+              percent={(passwordScore + 1) * 20}
+              status={passwordStatus.status}
+              showInfo
+              format={() => passwordStatus.text}
+            />
+          )}
+        </Form>
       </Modal>
     </div>
   );

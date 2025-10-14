@@ -62,9 +62,22 @@ class RefreshView(APIView):
             return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class ProfileView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = CustomUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = request.data
+        if 'first_name' in data:
+            user.first_name = data['first_name']
+        if 'last_name' in data:
+            user.last_name = data['last_name']
+        if 'password' in data and data['password']:
+            user.set_password(data['password'])  # хэшируем пароль
+        user.save()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
