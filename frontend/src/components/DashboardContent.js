@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Table, Button, Tabs, Spin, Typography, Space, message, Drawer, Form, Input, Select, Switch, InputNumber, DatePicker } from "antd";
-import { ReloadOutlined, EyeOutlined, SaveOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { ReloadOutlined, EditOutlined, SaveOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import axios from "../utils/axios";
 import moment from "moment";
 import { Upload } from "antd";
@@ -37,16 +37,22 @@ const DashboardContent = () => {
 const [isModalVisible, setIsModalVisible] = useState(false);
 const [orderItems, setOrderItems] = useState([]);
 const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+const [referenceTab, setReferenceTab] = useState("authors");
 
   const [form] = Form.useForm();
 
 
-  const rowSelection = ["books", "users", "authors", "genres", "publishers", "auctions"].includes(activeTab)
-  ? {
-      selectedRowKeys,
-      onChange: (keys) => setSelectedRowKeys(keys),
-    }
-  : undefined; // Для заказов и ставок не отображаем
+const rowSelection =
+  (
+    ["books", "users", "auctions"].includes(activeTab) ||
+    (activeTab === "references" && ["authors", "genres", "publishers"].includes(referenceTab))
+  )
+    ? {
+        selectedRowKeys,
+        onChange: (keys) => setSelectedRowKeys(keys),
+      }
+    : undefined; // Для заказов и ставок не отображаем
+
 
 
   const handleDeleteSelected = async () => {
@@ -157,6 +163,22 @@ const handleCloseModal = () => {
     return obj[path];
   };
 
+const openSelectedRecord = () => {
+  const id = selectedRowKeys[0];
+  let record = null;
+
+  if (activeTab === "books") record = books.find(b => b.id === id);
+  else if (activeTab === "users") record = users.find(u => u.id === id);
+  else if (activeTab === "auctions") record = auctions.find(a => a.id === id);
+  else if (activeTab === "references") {
+    if (referenceTab === "authors") record = authors.find(a => a.id === id);
+    if (referenceTab === "genres") record = genres.find(g => g.id === id);
+    if (referenceTab === "publishers") record = publishers.find(p => p.id === id);
+  }
+
+  if (record) openDetails(record);
+};
+
   const openDetails = (record) => {
     setSelectedRecord(record);
     setCreating(false);
@@ -172,7 +194,7 @@ const handleCloseModal = () => {
     });
 
     if (activeTab === "orders" && record.items) {
-      setOrderItems(record.items); // предполагаем, что API возвращает items
+      setOrderItems(record.items);
     } else {
       setOrderItems([]);
     }
@@ -194,69 +216,115 @@ const handleCloseModal = () => {
     form.resetFields();
   };
 
-  const handleRefresh = () => {
-    const endpointMap = {
-      books: () => fetchData("dashboard/books/", setBooks),
-      orders: () => fetchData("dashboard/orders/", setOrders),
-      auctions: () => fetchData("dashboard/auctions/", setAuctions),
-      bids: () => fetchData("dashboard/bids/", setBids),
-      users: () => fetchData("dashboard/users/", setUsers),
-      authors: () => fetchData("dashboard/authors/", setAuthors),
-      genres: () => fetchData("dashboard/genres/", setGenres),
-      publishers: () => fetchData("dashboard/publishers/", setPublishers),
-    };
-    endpointMap[activeTab]?.();
+const handleRefresh = () => {
+  const endpointMap = {
+    books: () => fetchData("dashboard/books/", setBooks),
+    orders: () => fetchData("dashboard/orders/", setOrders),
+    auctions: () => fetchData("dashboard/auctions/", setAuctions),
+    bids: () => fetchData("dashboard/bids/", setBids),
+    users: () => fetchData("dashboard/users/", setUsers),
+    references: () => {
+      const map = {
+        authors: () => fetchData("dashboard/authors/", setAuthors),
+        genres: () => fetchData("dashboard/genres/", setGenres),
+        publishers: () => fetchData("dashboard/publishers/", setPublishers),
+      };
+      map[referenceTab]?.();
+    }
   };
 
-  const saveRecord = async (values) => {
-    const endpointMap = {
+  endpointMap[activeTab]?.();
+};
+
+const saveRecord = async (values) => {
+  let endpoint = "";
+  
+  if (activeTab === "references") {
+    const map = {
+      authors: "dashboard/authors/",
+      genres: "dashboard/genres/",
+      publishers: "dashboard/publishers/"
+    };
+    endpoint = map[referenceTab];
+  } else {
+    const map = {
       books: "dashboard/books/",
       orders: "dashboard/orders/",
       auctions: "dashboard/auctions/",
       bids: "dashboard/bids/",
       users: "dashboard/users/",
-      authors: "dashboard/authors/",
-      genres: "dashboard/genres/",
-      publishers: "dashboard/publishers/",
     };
+    endpoint = map[activeTab];
+  }
 
-    const url = endpointMap[activeTab] + (creating ? "" : `${selectedRecord.id}/`);
+  if (!endpoint) return;
 
-    const formData = new FormData();
+  const url = endpoint + (creating ? "" : `${selectedRecord.id}/`);
+  const formData = new FormData();
 
-    Object.entries(values).forEach(([key, value]) => {
-      if (key === "photo" && value && value.file) {
-        formData.append(key, value.file);
-      } else if (Array.isArray(value)) {
-        value.forEach(v => formData.append(key, v));
-      } else if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
+  Object.entries(values).forEach(([key, value]) => {
+    if (key === "photo" && value && value.file) {
+      formData.append(key, value.file);
+    } else if (Array.isArray(value)) {
+      value.forEach(v => formData.append(key, v));
+    } else if (value !== undefined && value !== null) {
+      formData.append(key, value);
+    }
+  });
 
+  // Только для книг добавляем связи
+  if (activeTab === "books") {
     if (values.authors) values.authors.forEach(a => formData.append('authors_ids', a));
     if (values.genres) values.genres.forEach(g => formData.append('genres_ids', g));
     if (values.publisher) formData.append('publisher_id', values.publisher);
+  }
 
-    try {
-      setSaving(true);
-      if (creating) {
-        await axios.post(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      } else {
-        await axios.put(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      }
-      message.success(`Книга успешно ${creating ? "создана" : "обновлена"}`);
-      handleRefresh();
-      closeDrawer();
-    } catch (err) {
-      message.error(`Ошибка: ${err.response?.data?.message || err.message}`);
-      console.error("Save error:", err);
-    } finally {
-      setSaving(false);
+  try {
+    setSaving(true);
+    if (creating) {
+      await axios.post(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    } else {
+      await axios.put(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
     }
-  };
+    message.success(`${creating ? "Создано" : "Обновлено"} успешно`);
+    handleRefresh();
+    closeDrawer();
+  } catch (err) {
+    message.error(`Ошибка: ${err.response?.data?.message || err.message}`);
+    console.error("Save error:", err);
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   const renderFormFields = () => {
+
+      if (activeTab === "references") {
+    switch (referenceTab) {
+      case "authors":
+        return (
+          <Form.Item name="name" label="Имя автора" rules={[{ required: true, message: "Введите имя автора" }]}>
+            <Input maxLength={100} />
+          </Form.Item>
+        );
+      case "genres":
+        return (
+          <Form.Item name="name" label="Название жанра" rules={[{ required: true, message: "Введите название жанра" }]}>
+            <Input maxLength={50} />
+          </Form.Item>
+        );
+      case "publishers":
+        return (
+          <Form.Item name="name" label="Название издательства" rules={[{ required: true, message: "Введите название издательства" }]}>
+            <Input maxLength={50} />
+          </Form.Item>
+        );
+      default:
+        return null;
+    }
+  }
+
     switch (activeTab) {
       case "books":
         return (
@@ -402,27 +470,6 @@ const handleCloseModal = () => {
           </>
         );
 
-      case "authors":
-        return (
-          <Form.Item name="name" label="Имя автора" rules={[{ required: true, message: "Введите имя автора" }]}>
-            <Input maxLength={100} />
-          </Form.Item>
-        );
-
-      case "genres":
-        return (
-          <Form.Item name="name" label="Название жанра" rules={[{ required: true, message: "Введите название жанра" }]}>
-            <Input maxLength={50} />
-          </Form.Item>
-        );
-
-      case "publishers":
-        return (
-          <Form.Item name="name" label="Название издательства" rules={[{ required: true, message: "Введите название издательства" }]}>
-            <Input maxLength={50} />
-          </Form.Item>
-        );
-
       case "orders":
         return (
           <>
@@ -533,14 +580,7 @@ const handleCloseModal = () => {
         onFilter: (value, record) => record.genres?.some(g => g.name === value),
         filterSearch: true,
       },
-      { 
-        title: "Действия", 
-        render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
-      },
+
     ],
     orders: [
       { 
@@ -582,17 +622,6 @@ const handleCloseModal = () => {
         render: val => `${val} ₽`,
         sorter: (a, b) => a.amount - b.amount,
       },
-      {
-        title: "Действия",
-        render: (_, record) => (
-          <Space>
-            <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-              Подробнее
-            </Button>
-
-          </Space>
-        ),
-      }
     ],
     auctions: [
       { 
@@ -633,14 +662,6 @@ const handleCloseModal = () => {
         ],
         onFilter: (value, record) => record.status_display === value,
       },
-      { 
-        title: "Действия", 
-        render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
-      },
     ],
     bids: [
       { 
@@ -668,14 +689,6 @@ const handleCloseModal = () => {
         align: "right", 
         render: val => `${val} ₽`,
         sorter: (a, b) => a.amount - b.amount,
-      },
-      { 
-        title: "Действия", 
-        render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
       },
     ],
     users: [
@@ -723,14 +736,6 @@ const handleCloseModal = () => {
         ],
         onFilter: (value, record) => record.is_admin === value,
       },
-      { 
-        title: "Действия", 
-        render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
-      },
     ],
     authors: [
       { 
@@ -745,14 +750,6 @@ const handleCloseModal = () => {
         dataIndex: "name",
         sorter: (a, b) => a.name.localeCompare(b.name),
         ...getColumnSearchProps('name', 'имя автора')
-      },
-      { 
-        title: "Действия", 
-        render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
       },
     ],
     genres: [
@@ -769,14 +766,6 @@ const handleCloseModal = () => {
         sorter: (a, b) => a.name.localeCompare(b.name),
         ...getColumnSearchProps('name', 'название жанра')
       },
-      { 
-        title: "Действия", 
-        render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
-      },
     ],
     publishers: [
       { 
@@ -791,14 +780,6 @@ const handleCloseModal = () => {
         dataIndex: "name",
         sorter: (a, b) => a.name.localeCompare(b.name),
         ...getColumnSearchProps('name', 'название издательства')
-      },
-      { 
-        title: "Действия", 
-        render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => openDetails(record)}>
-            Подробнее
-          </Button>
-        ) 
       },
     ],
   };
@@ -815,15 +796,39 @@ const handleCloseModal = () => {
   };
 
   const getCreateButtonLabel = () => {
-    const labels = {
-      users: "пользователя",
-      books: "книгу",
-      auctions: "аукцион",
-      authors: "автора",
-      genres: "жанр",
-      publishers: "издательство"
-    };
-    return `Добавить ${labels[activeTab] || activeTab}`;
+    if (activeTab === "references") {
+      const labels = {
+        authors: "автора",
+        genres: "жанр",
+        publishers: "издательство"
+      };
+      return `Добавить ${labels[referenceTab] || referenceTab}`;
+    } else {
+      const labels = {
+        users: "пользователя",
+        books: "книгу",
+        auctions: "аукцион"
+      };
+      return `Добавить ${labels[activeTab] || activeTab}`;
+    }
+  };
+
+    const getLabel = () => {
+    if (activeTab === "references") {
+      const labels = {
+        authors: "автора",
+        genres: "жанр",
+        publishers: "издательство"
+      };
+      return `${labels[referenceTab] || referenceTab}`;
+    } else {
+      const labels = {
+        users: "пользователя",
+        books: "книгу",
+        auctions: "аукцион"
+      };
+      return `${labels[activeTab] || activeTab}`;
+    }
   };
 
   return (
@@ -833,18 +838,25 @@ const handleCloseModal = () => {
       </Space>
 
       <Card>
-        {["books", "auctions", "users", "authors", "genres", "publishers"].includes(activeTab) && (
+        {["books", "auctions", "users", "references"].includes(activeTab) && (
           <Button 
             type="primary" 
             style={{ marginBottom: 16 }} 
             icon={<PlusOutlined />} 
             onClick={openCreate}
           >
-            {getCreateButtonLabel()}
+            { getCreateButtonLabel()}
           </Button>
         )}
 
-        {["books", "users", "authors", "genres", "publishers", "auctions"].includes(activeTab) && selectedRowKeys.length > 0 && (
+          
+        {["books", "users", "auctions", "references"].includes(activeTab) && selectedRowKeys.length === 1 && (
+          <Button icon={<EditOutlined />} style={{ marginLeft: 8 }}  onClick={() => openSelectedRecord()}>
+            Изменить выбранное
+          </Button>
+        )}
+
+        {["books", "users", "auctions", "references"].includes(activeTab) && selectedRowKeys.length > 0 && (
           <Button 
             danger 
             style={{ marginLeft: 8 }} 
@@ -920,44 +932,50 @@ const handleCloseModal = () => {
               rowSelection={rowSelection}
             />
           </TabPane>
-          <TabPane tab="Авторы" key="authors">
-            <Table 
-              dataSource={dataSourceMap.authors} 
-              columns={columns.authors} 
-              rowKey="id" 
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-              scroll={{ x: 1000 }}
-              rowSelection={rowSelection}
-            />
+          <TabPane tab="Справочники" key="references">
+            <Tabs
+              activeKey={referenceTab}
+              onChange={key => setReferenceTab(key)}
+              type="card"
+            >
+              <TabPane tab="Авторы" key="authors">
+                <Table 
+                  dataSource={authors} 
+                  columns={columns.authors} 
+                  rowKey="id" 
+                  loading={loading}
+                  pagination={{ pageSize: 10 }}
+                  rowSelection={rowSelection}
+                />
+              </TabPane>
+              <TabPane tab="Жанры" key="genres">
+                <Table 
+                  dataSource={genres} 
+                  columns={columns.genres} 
+                  rowKey="id" 
+                  loading={loading}
+                  pagination={{ pageSize: 10 }}
+                  rowSelection={rowSelection}
+                />
+              </TabPane>
+              <TabPane tab="Издательства" key="publishers">
+                <Table 
+                  dataSource={publishers} 
+                  columns={columns.publishers} 
+                  rowKey="id" 
+                  loading={loading}
+                  pagination={{ pageSize: 10 }}
+                  rowSelection={rowSelection}
+                />
+              </TabPane>
+            </Tabs>
           </TabPane>
-          <TabPane tab="Жанры" key="genres">
-            <Table 
-              dataSource={dataSourceMap.genres} 
-              columns={columns.genres} 
-              rowKey="id" 
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-              scroll={{ x: 1000 }}
-              rowSelection={rowSelection}
-            />
-          </TabPane>
-          <TabPane tab="Издательства" key="publishers">
-            <Table 
-              dataSource={dataSourceMap.publishers} 
-              columns={columns.publishers} 
-              rowKey="id" 
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-              scroll={{ x: 1000 }}
-              rowSelection={rowSelection}
-            />
-          </TabPane>
+
         </Tabs>
       </Card>
 
       <Drawer
-        title={creating ? `Создать ${activeTab}` : `Редактировать ${activeTab}`}
+        title={creating ? `Создать ${getLabel(activeTab)}` : `Редактировать ${getLabel(activeTab)}`}
         width={600}
         onClose={closeDrawer}
         open={drawerVisible}
