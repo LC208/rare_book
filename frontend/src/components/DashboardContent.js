@@ -232,7 +232,6 @@ const handleRefresh = () => {
       map[referenceTab]?.();
     }
   };
-
   endpointMap[activeTab]?.();
 };
 
@@ -262,16 +261,36 @@ const saveRecord = async (values) => {
   const url = endpoint + (creating ? "" : `${selectedRecord.id}/`);
   const formData = new FormData();
 
+Object.entries(values).forEach(([key, value]) => {
+  if (key === "photo") {
+    if (value && value.originFileObj) {
+      formData.append(key, value.originFileObj);
+    }
+  } else if (Array.isArray(value)) {
+    value.forEach(v => formData.append(key, v));
+  } else if (value !== undefined && value !== null) {
+    formData.append(key, value);
+  }
+});
+
+if (activeTab === "auctions") {
+  if (values.start_time) {
+    formData.append('start_time', values.start_time.toISOString());
+  }
+  if (values.end_time) {
+    formData.append('end_time', values.end_time.toISOString());
+  }
+  // Остальные поля как обычно
   Object.entries(values).forEach(([key, value]) => {
-    if (key === "photo" && value && value.file) {
-      formData.append(key, value.file);
-    } else if (Array.isArray(value)) {
-      value.forEach(v => formData.append(key, v));
-    } else if (value !== undefined && value !== null) {
-      formData.append(key, value);
+    if (key !== "start_time" && key !== "end_time") {
+      if (Array.isArray(value)) {
+        value.forEach(v => formData.append(key, v));
+      } else if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
     }
   });
-
+}
   // Только для книг добавляем связи
   if (activeTab === "books") {
     if (values.authors) values.authors.forEach(a => formData.append('authors_ids', a));
@@ -633,9 +652,9 @@ const saveRecord = async (values) => {
       },
       { 
         title: "Книга", 
-        dataIndex: ["product", "title"],
+        dataIndex: ["product_title"],
         sorter: (a, b) => a.product?.title?.localeCompare(b.product?.title),
-        ...getColumnSearchProps('product.title', 'название книги')
+        ...getColumnSearchProps('product_title', 'название книги')
       },
       { 
         title: "Стартовая цена", 
@@ -673,7 +692,7 @@ const saveRecord = async (values) => {
       },
       { 
         title: "Аукцион", 
-        dataIndex: ["auction", "id"],
+        dataIndex: ["auction"],
         sorter: (a, b) => a.auction?.id - b.auction?.id,
         ...getColumnSearchProps('auction.id', 'ID аукциона')
       },

@@ -69,6 +69,7 @@ const menuLinks = (
         {isAuthenticated ? (
           <>
             <li><Link to="/profile">Профиль</Link></li>
+            <li><Link to="/auction">Аукционы</Link></li>
             <li><Link type="link" onClick={handleLogout} style={{ padding: 0, color: '#fff' }}>Выйти</Link></li>
 
           </>

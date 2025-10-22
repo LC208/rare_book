@@ -10,6 +10,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import AdminDashboard from './components/AdminDashboard';
 import BookSearch from './components/BookSearch';
 import Cart from './components/CartComponent';
+import AuctionComponent from "./components/AuctionComponent";
 
 
 
@@ -39,6 +40,11 @@ const App = () => {
         <Route path="/cart" element={
           <PrivateRoute>
             <Cart />
+          </PrivateRoute>
+        } />
+        <Route path="/auction" element={
+          <PrivateRoute>
+            <AuctionComponent />
           </PrivateRoute>
         } />
         {/* <Route path="/" element={<h1>Главная</h1>} /> */}
