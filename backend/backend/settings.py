@@ -38,8 +38,18 @@ DEBUG = True
 ALLOWED_HOSTS = []
 AUTH_USER_MODEL = "users.CustomUser"
 
-
-# Application definition
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Irkutsk'
+CELERY_BEAT_SCHEDULE = {
+    'update-auction-status-every-minute': {
+        'task': 'auctions.tasks.update_auction_status',
+        'schedule': 60.0,
+    },
+}
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -59,6 +69,7 @@ INSTALLED_APPS = [
     "dashboard",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [

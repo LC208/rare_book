@@ -225,8 +225,8 @@ const Profile = () => {
     setLoadingBook(true);
     axios.get(`books/?id=${bookId}`)
       .then(res => {
-        if (res.data.length > 0) {
-          setSelectedBook(res.data[0]);
+        if (res.data.results.length > 0) {
+          setSelectedBook(res.data.results[0]);
           setIsBookModalOpen(true);
         }
       })
@@ -278,7 +278,11 @@ const Profile = () => {
       },
     ];
 
-    return <Table rowKey="id" tableLayout="auto" dataSource={orders} columns={columns} loading={loadingOrders} />;
+    return <Table rowKey="id"           pagination={{
+            defaultPageSize: 5,
+            showSizeChanger: true,
+            showTotal: (total) => `Всего закзаков: ${total}`,
+          }} tableLayout="auto" dataSource={orders} columns={columns} loading={loadingOrders} />;
   };
 
   // Таблица ставок пользователя
@@ -334,7 +338,11 @@ const Profile = () => {
       },
     ];
 
-    return <Table rowKey="id" tableLayout="auto" dataSource={bids} columns={columns} loading={loadingBids} />;
+    return <Table rowKey="id"           pagination={{
+            defaultPageSize: 5,
+            showSizeChanger: true,
+            showTotal: (total) => `Всего ставок: ${total}`,
+          }} tableLayout="auto" dataSource={bids} columns={columns} loading={loadingBids} />;
   };
 
   // Таблица всех ставок в модалке аукциона
@@ -405,7 +413,8 @@ const Profile = () => {
 
   return (
     <div style={{ maxWidth: 900, margin: "20px auto" }}>
-      <Card title={<Title level={3}>Профиль</Title>} variant="outlined" style={{ marginBottom: 24 }}>
+      <Title level={3}>Профиль</Title>
+      <Card variant="outlined" style={{ marginBottom: 24 }}>
         {loadingUser ? <Spin /> : (
           <>
             <p><strong>Имя:</strong> {user.first_name}</p>
@@ -558,13 +567,13 @@ const Profile = () => {
               )}
             </div>
             <div style={{ flex: 1 }}>
-              <p><strong>Авторы:</strong> {selectedBook.authors?.map(a => a.name).join(", ") || "Неизвестно"}</p>
-              <p><strong>Жанры:</strong> {selectedBook.genres?.map(g => g.name).join(", ") || "—"}</p>
+              <p><strong>Авторы:</strong> {selectedBook.authors_list || "Неизвестно"}</p>
+              <p><strong>Жанры:</strong> {selectedBook.genres_list || "—"}</p>
               <p><strong>Издательство:</strong> {selectedBook.publisher?.name || "—"}</p>
               <p><strong>Год:</strong> {selectedBook.year}</p>
               <p><strong>Состояние:</strong> {selectedBook.condition_display || "—"}</p>
               <p><strong>Статус:</strong> {selectedBook.status_display || "—"}</p>
-              <p><strong>Цена:</strong> {selectedBook.price} ₽</p>
+              {selectedBook.status != 2 && selectedBook.status != 3 && <p><strong>Цена:</strong> {selectedBook.price} ₽</p>}
               <p style={{ marginTop: 16 }}>
                 <strong>Описание:</strong><br />
                 {selectedBook.description || "Описание отсутствует"}

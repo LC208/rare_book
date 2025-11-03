@@ -3,7 +3,6 @@ import { Table, Button, InputNumber, Space, Typography, Popconfirm, message } fr
 import { getCart, saveCart, removeFromCart, clearCart } from "../utils/cart";
 import axios from "../utils/axios";
 
-
 const { Title } = Typography;
 
 const Cart = () => {
@@ -14,6 +13,19 @@ const Cart = () => {
     setCartItems(getCart());
   }, []);
 
+  // Изменение количества с ограничением по наличию книги
+  const handleQuantityChange = (id, newQuantity) => {
+    const updatedCart = cartItems.map(item => {
+      if (item.id === id) {
+        const maxQty = item.book_quantity || 100;
+        const quantity = Math.min(Math.max(newQuantity, 1), maxQty);
+        return { ...item, quantity };
+      }
+      return item;
+    });
+    setCartItems(updatedCart);
+    saveCart(updatedCart);
+  };
 
   // Удаляем книгу
   const handleRemove = (id) => {
@@ -28,7 +40,7 @@ const Cart = () => {
     setCartItems([]);
   };
 
-  // ✅ Оформляем заказ
+  // Оформляем заказ
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       message.warning("Корзина пуста");
@@ -37,24 +49,28 @@ const Cart = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        "orders/create/",
-        {
-          payment: "H", // Оплата при получении
-          items: cartItems.map(item => ({
-            id: item.id,
-          })),
-        }
-      );
+      const response = await axios.post("orders/create/", {
+        payment: "H", // Оплата при получении
+        items: cartItems.map(item => ({
+          id: item.id,
+          quantity: item.quantity || 1,
+        })),
+      });
 
       message.success(`Заказ №${response.data.id} успешно оформлен!`);
       handleClear();
     } catch (error) {
       console.error(error);
       if (error.response?.data?.insufficient_books?.length) {
-        message.error("Недостаточно экземпляров:\n" + error.response.data.insufficient_books.join("\n"));
+        message.error(
+          "Недостаточно экземпляров:\n" +
+            error.response.data.insufficient_books.join("\n")
+        );
       } else if (error.response?.data?.unavailable_books?.length) {
-        message.error("Некоторые книги недоступны:\n" + error.response.data.unavailable_books.join("\n"));
+        message.error(
+          "Некоторые книги недоступны:\n" +
+            error.response.data.unavailable_books.join("\n")
+        );
       } else {
         message.error("Ошибка при оформлении заказа");
       }
@@ -76,9 +92,22 @@ const Cart = () => {
       render: (val) => Number(val).toFixed(2),
     },
     {
+      title: "Количество",
+      key: "quantity",
+      render: (_, record) => (
+        <InputNumber
+          min={1}
+          max={record.book_quantity || 100}
+          value={record.quantity || 1}
+          onChange={(value) => handleQuantityChange(record.id, value)}
+        />
+      ),
+    },
+    {
       title: "Сумма, ₽",
       key: "total",
-      render: (_, record) => Number(record.price).toFixed(2),
+      render: (_, record) =>
+        Number(record.price * (record.quantity || 1)).toFixed(2),
     },
     {
       title: "Действия",
@@ -88,13 +117,18 @@ const Cart = () => {
           title="Удалить книгу из корзины?"
           onConfirm={() => handleRemove(record.id)}
         >
-          <Button danger size="small">Удалить</Button>
+          <Button danger size="small">
+            Удалить
+          </Button>
         </Popconfirm>
       ),
     },
   ];
 
-  const totalPrice = cartItems.reduce((sum, item) => Number(sum) + Number(item.price), 0);
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + item.price * (item.quantity || 1),
+    0
+  );
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 24 }}>
@@ -109,22 +143,26 @@ const Cart = () => {
             rowKey="id"
             pagination={false}
             footer={() => (
-              <Space style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                <div>
-                  <Button danger onClick={handleClear} disabled={loading}>
-                    Очистить корзину
-                  </Button>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <strong>Итого: {Number(totalPrice).toFixed(2)} ₽</strong>
+              <Space
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  width: "100%",
+                }}
+              >
+                <Button danger onClick={handleClear} disabled={loading}>
+                  Очистить корзину
+                </Button>
+                <Space align="center">
+                  <strong>Итого: {totalPrice.toFixed(2)} ₽</strong>
                   <Button
                     type="primary"
                     onClick={handleCheckout}
                     loading={loading}
                   >
-                    Оформить заказ (оплата при получении)
+                    Оформить заказ
                   </Button>
-                </div>
+                </Space>
               </Space>
             )}
           />

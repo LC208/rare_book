@@ -13,6 +13,7 @@ import {
   Space,
   Pagination,
   Empty,
+  InputNumber
 } from "antd";
 import {
   SearchOutlined,
@@ -34,11 +35,12 @@ const BookSearch = () => {
   const [publishers, setPublishers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, setPageSize] = useState(4);
   const [total, setTotal] = useState(0);
   const { isAuthenticated } = useAuth();
   const [selectedBook, setSelectedBook] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [quantityToAdd, setQuantityToAdd] = useState(1);
 
   const showBookModal = (book) => {
     setSelectedBook(book);
@@ -140,8 +142,8 @@ const fetchBooks = async () => {
         params.max_price = filters.priceRange[1]; // верхняя граница
     }
     params.ordering = filters.ordering;
-    params.limit = pageSize;
-    params.offset = (currentPage - 1) * pageSize;
+    params.page = currentPage;
+    params.page_size = pageSize;
 
     const res = await axios.get("books/", { params });
     setBooks(res.data.results || res.data);
@@ -230,6 +232,10 @@ const fetchBooks = async () => {
         <p style={{ marginBottom: 8, fontSize: 12 }}>
           <strong>Год:</strong> {book.year}
         </p>
+        <p style={{ marginBottom: 8, fontSize: 12 }}>
+          <strong>Доступно:</strong> {book.quantity} шт.
+        </p>
+
       </div>
 
         
@@ -450,7 +456,7 @@ const fetchBooks = async () => {
                       current={currentPage}
                       pageSize={pageSize}
                       total={total}
-                      pageSizeOptions={[12, 24, 36, 48]}
+                      pageSizeOptions={[4, 8, 12 ,24, 36, 48]}
                       showSizeChanger
                       showTotal={(total, range) =>
                         `${range[0]}-${range[1]} из ${total}`
@@ -477,17 +483,27 @@ const fetchBooks = async () => {
   open={isModalVisible}
   onCancel={handleCloseModal}
   footer={[
-    isAuthenticated && (
-      <Button
-        key="cart"
-        type="primary"
-        icon={<ShoppingCartOutlined />}
-        disabled={selectedBook?.status !== 1}
-        onClick={() => addToCart(selectedBook)}
-      >
-        Добавить в корзину
-      </Button>
-    ),
+isAuthenticated && selectedBook && selectedBook.status === 1 && selectedBook.quantity > 0 && (
+          <InputNumber
+            min={1}
+            max={selectedBook.quantity}
+            defaultValue={1}
+            value={quantityToAdd}
+            onChange={setQuantityToAdd}
+          />
+      )
+    ,
+    isAuthenticated && selectedBook && selectedBook.status === 1 && selectedBook.quantity > 0 && <Button
+            type="primary"
+            icon={<ShoppingCartOutlined />}
+            onClick={() => {
+              addToCart(selectedBook, quantityToAdd);
+              handleCloseModal();
+            }}
+          >
+            Добавить в корзину
+          </Button>
+    ,
     <Button key="close" onClick={handleCloseModal}>
       Закрыть
     </Button>,

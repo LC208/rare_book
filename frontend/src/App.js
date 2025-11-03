@@ -11,6 +11,7 @@ import AdminDashboard from './components/AdminDashboard';
 import BookSearch from './components/BookSearch';
 import Cart from './components/CartComponent';
 import AuctionComponent from "./components/AuctionComponent";
+import SalesReport from "./components/SalesReport";
 
 
 
@@ -53,6 +54,16 @@ const App = () => {
           element={
             <ProtectedRoute adminOnly>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+          
+        />
+
+        <Route
+          path="/sales-report"
+          element={
+            <ProtectedRoute adminOnly>
+              <SalesReport />
             </ProtectedRoute>
           }
         />

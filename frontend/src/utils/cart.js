@@ -19,23 +19,49 @@ export const saveCart = (cart) => {
 };
 
 /**
- * Добавляем книгу в корзину
- * @param {Object} book Объект книги {id, title, price}
+ * Добавляем книгу в корзину с учетом количества
+ * @param {Object} book Объект книги {id, title, price, quantity}
+ * @param {number} quantity Количество для добавления
  */
-export const addToCart = (book) => {
+/**
+ * Добавляем книгу в корзину с учетом количества и доступного количества
+ * @param {Object} book Объект книги {id, title, price, quantity, book_quantity}
+ * @param {number} quantity Количество для добавления
+ */
+export const addToCart = (book, quantity = 1) => {
   const cart = getCart();
-
   const existingItem = cart.find(item => item.id === book.id);
+
+  // Максимальное количество для добавления
+  const maxQty = book.quantity;
+
   if (existingItem) {
-    message.success(`"${book.title}" уже в корзине`);
+    const newQuantity = existingItem.quantity + quantity;
+    if (newQuantity > maxQty) {
+      message.error(`Доступно только ${maxQty} шт. "${book.title}"`);
+      return;
+    }
+    existingItem.quantity = newQuantity;
+    existingItem.book_quantity = maxQty; // добавляем book_quantity
+    message.success(`Количество "${book.title}" в корзине обновлено до ${existingItem.quantity}`);
   } else {
-    cart.push({ id: book.id, title: book.title, price: book.price});
-    saveCart(cart);
-    message.success(`"${book.title}" добавлена в корзину`);
+    if (quantity > maxQty) {
+      message.error(`Доступно только ${maxQty} шт. "${book.title}"`);
+      return;
+    }
+    cart.push({
+      id: book.id,
+      title: book.title,
+      price: book.price,
+      quantity,
+      book_quantity: maxQty, // добавляем доступное количество
+    });
+    message.success(`"${book.title}" добавлена в корзину (${quantity} шт.)`);
   }
 
-
+  saveCart(cart);
 };
+
 
 /**
  * Удаляем книгу из корзины по ID
@@ -55,12 +81,11 @@ export const clearCart = () => {
   message.info("Корзина очищена");
 };
 
-
 /**
- * Получаем общую стоимость корзины
+ * Получаем общую стоимость корзины с учетом количества
  * @returns {number}
  */
 export const getCartTotal = () => {
   const cart = getCart();
-  return cart.reduce((sum, item) => Number(sum) + Number(item.price), 0);
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 };
